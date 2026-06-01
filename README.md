@@ -7,3 +7,4 @@ Gmail cleaner buddy is designer to delete emails from gmail account cleaning the
 
     index.html  
     README.md
+    agents.md
