@@ -181,7 +181,7 @@ h1{font-size:34px;font-weight:900;}
   <div class="card auth" id="authScreen">
     <h2>🔒 Conectar ao Gmail</h2>
     <p>Autorize o acesso seguro à sua conta Gmail para analisar e limpar emails em tempo real.</p>
-    <button class="btn btn-google" onclick="loginGoogle()">
+    <button id="loginButton" class="btn btn-google" type="button">
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy43eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PHBhdGggZD0iTTAgMGgxOHYxOEgweiIvPjwvZz48L3N2Zz4=" alt="Google">
       Entrar com Google
     </button>
@@ -199,9 +199,9 @@ h1{font-size:34px;font-weight:900;}
         <p id="userEmail"></p>
       </div>
       <div class="actions">
-        <button class="btn secondary" onclick="refreshAnalysis()">🔄 Atualizar</button>
-        <button class="btn danger" onclick="cleanAll()">🗑️ Limpar Top 10</button>
-        <button class="btn secondary" onclick="logout()">🚪 Sair</button>
+        <button id="refreshButton" class="btn secondary" type="button">🔄 Atualizar</button>
+        <button id="cleanAllButton" class="btn danger" type="button">🗑️ Limpar Top 10</button>
+        <button id="logoutButton" class="btn secondary" type="button">🚪 Sair</button>
       </div>
     </div>
 
@@ -245,7 +245,11 @@ let currentData = null;
 let csrfToken = null;
 
 window.addEventListener('DOMContentLoaded', async () => {
-  const params = new URLSearchParams(window.location.search);
+  document.getElementById('loginButton')?.addEventListener('click', loginGoogle);
+  document.getElementById('refreshButton')?.addEventListener('click', refreshAnalysis);
+  document.getElementById('cleanAllButton')?.addEventListener('click', cleanAll);
+  document.getElementById('logoutButton')?.addEventListener('click', logout);
+
 
   if (params.get('auth') === 'success') {
     toast('✅ Autenticado com sucesso!');

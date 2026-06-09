@@ -106,6 +106,14 @@ app.get('/auth/status', (req, res) => {
   });
 });
 
+// Middleware de autenticação
+function requireAuth(req, res, next) {
+  if (!req.session.tokens) {
+    return res.status(401).json({ error: 'Não autenticado' });
+  }
+  next();
+}
+
 // 4. Logout
 app.post('/auth/logout', requireAuth, (req, res) => {
   req.session.destroy((err) => {
@@ -118,14 +126,6 @@ app.post('/auth/logout', requireAuth, (req, res) => {
 });
 
 // ========== ROTAS DA GMAIL API ==========
-
-// Middleware de autenticação
-const requireAuth = (req, res, next) => {
-  if (!req.session.tokens) {
-    return res.status(401).json({ error: 'Não autenticado' });
-  }
-  next();
-};
 
 app.get('/auth/csrf-token', requireAuth, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
@@ -338,6 +338,11 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    console.error('Token CSRF inválido:', err);
+    return res.status(403).json({ error: 'Requisição não autorizada' });
+  }
+
   console.error('Erro interno no servidor:', err);
   res.status(500).json({ error: 'Erro interno no servidor' });
 });
