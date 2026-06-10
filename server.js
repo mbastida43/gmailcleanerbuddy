@@ -94,14 +94,18 @@ const apiLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  limit: 20,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Muitas tentativas de autenticação. Tente novamente mais tarde.' }
 });
 
 app.use('/api/', apiLimiter);
-app.use('/auth/', authLimiter);
+// Limite estrito só no fluxo OAuth (/auth/google e /auth/google/callback);
+// /auth/status é chamado a cada carregamento de página e usa o limite geral
+app.use('/auth/google', authLimiter);
+app.use('/auth/status', apiLimiter);
+app.use('/auth/logout', apiLimiter);
 
 // Defesa em profundidade contra CSRF em rotas que mudam estado:
 // além de SameSite=lax, rejeita requisições cujo Origin não bata com o host.
@@ -151,7 +155,10 @@ app.get('/auth/google', (req, res) => {
     // Escopo mínimo necessário (gmail.modify já inclui leitura) — princípio
     // do menor privilégio (OWASP A01)
     scope: ['https://www.googleapis.com/auth/gmail.modify'],
-    prompt: 'consent',
+    // select_account: mostra sempre o seletor de contas do Google (a mesma
+    // caixa de diálogo de quem abre gmail.com), permitindo entrar com
+    // qualquer conta; consent: garante a emissão do refresh token
+    prompt: 'select_account consent',
     state
   });
   res.redirect(authUrl);
@@ -165,11 +172,15 @@ app.get('/auth/google/callback', async (req, res) => {
     return res.redirect('/?error=no_code');
   }
 
-  if (!state || !req.session.oauthState ||
-      !crypto.timingSafeEqual(
-        Buffer.from(String(state)),
-        Buffer.from(req.session.oauthState)
-      )) {
+  // timingSafeEqual exige buffers do mesmo tamanho — sem o guard de
+  // comprimento, um state malformado lançaria exceção e derrubaria o processo
+  const expectedState = req.session.oauthState;
+  const providedState = Buffer.from(String(state || ''));
+  const stateIsValid = typeof expectedState === 'string' &&
+    providedState.length === Buffer.byteLength(expectedState) &&
+    crypto.timingSafeEqual(providedState, Buffer.from(expectedState));
+
+  if (!stateIsValid) {
     return res.redirect('/?error=invalid_state');
   }
   delete req.session.oauthState;
@@ -223,8 +234,30 @@ const requireAuth = (req, res, next) => {
     return res.status(401).json({ error: 'Não autenticado' });
   }
   req.oauthClient = createOAuthClient(req.session.tokens);
+  // O access token expira em ~1h; o SDK o renova sozinho usando o refresh
+  // token. Persistimos os tokens renovados na sessão para o usuário não
+  // precisar logar de novo.
+  req.oauthClient.on('tokens', (tokens) => {
+    req.session.tokens = { ...req.session.tokens, ...tokens };
+  });
   next();
 };
+
+// Detecta credenciais expiradas/revogadas para pedir novo login em vez de
+// devolver um erro 500 genérico
+function isAuthError(error) {
+  const status = (error.response && error.response.status) || error.code;
+  return status === 401 || status === '401' ||
+         /invalid_grant|invalid_credentials/i.test(error.message || '');
+}
+
+function handleGmailError(req, res, error, fallbackMessage) {
+  if (isAuthError(error)) {
+    req.session.destroy(() => {});
+    return res.status(401).json({ error: 'Sessão expirada. Conecte-se novamente.' });
+  }
+  res.status(500).json({ error: fallbackMessage });
+}
 
 // 5. Buscar email do usuário
 app.get('/api/user', requireAuth, async (req, res) => {
@@ -238,7 +271,7 @@ app.get('/api/user', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao buscar perfil:', error.message);
-    res.status(500).json({ error: 'Erro ao buscar perfil' });
+    handleGmailError(req, res, error, 'Erro ao buscar perfil');
   }
 });
 
@@ -343,7 +376,7 @@ app.get('/api/analyze', requireAuth, async (req, res) => {
 
   } catch (error) {
     console.error('Erro na análise:', error.message);
-    res.status(500).json({ error: 'Erro ao analisar emails' });
+    handleGmailError(req, res, error, 'Erro ao analisar emails');
   }
 });
 
@@ -404,7 +437,7 @@ app.post('/api/clean', verifySameOrigin, requireAuth, async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao limpar emails:', error.message);
-    res.status(500).json({ error: 'Erro ao limpar emails' });
+    handleGmailError(req, res, error, 'Erro ao limpar emails');
   }
 });
 

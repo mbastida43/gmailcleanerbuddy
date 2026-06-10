@@ -36,6 +36,17 @@ function loginGoogle() {
   window.location.href = '/auth/google';
 }
 
+// Sessão expirada/revogada: volta para a tela de login
+async function apiFetch(url, options) {
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    toast('🔒 Sessão expirada. Conecte-se novamente.');
+    setTimeout(() => location.reload(), 1500);
+    throw new Error('unauthenticated');
+  }
+  return res;
+}
+
 async function logout() {
   await fetch('/auth/logout', { method: 'POST' });
   location.reload();
@@ -45,7 +56,7 @@ async function loadUserData() {
   showLoading();
 
   try {
-    const userRes = await fetch('/api/user');
+    const userRes = await apiFetch('/api/user');
     const userData = await userRes.json();
 
     document.getElementById('userEmail').textContent = `📧 ${userData.email}`;
@@ -68,7 +79,7 @@ async function refreshAnalysis() {
   toast('🔍 Analisando caixa postal...');
 
   try {
-    const res = await fetch('/api/analyze');
+    const res = await apiFetch('/api/analyze');
     const data = await res.json();
 
     currentData = data;
@@ -135,7 +146,7 @@ async function cleanSender(sender) {
   showLoading();
 
   try {
-    const res = await fetch('/api/clean', {
+    const res = await apiFetch('/api/clean', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sender })
