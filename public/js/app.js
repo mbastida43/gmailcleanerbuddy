@@ -84,7 +84,11 @@ async function refreshAnalysis() {
 
     currentData = data;
     renderResults(data);
-    toast('✅ Análise concluída!');
+    if (data.failedMessages > 0) {
+      toast(`⚠️ Análise parcial: ${data.failedMessages} mensagens não puderam ser lidas`);
+    } else {
+      toast('✅ Análise concluída!');
+    }
 
   } catch (error) {
     console.error('Erro na análise:', error);
@@ -174,19 +178,35 @@ async function cleanAll() {
 
   showLoading();
 
+  let removed = 0;
+  let failures = 0;
+
   for (const item of currentData.top10) {
     try {
-      await fetch('/api/clean', {
+      const res = await apiFetch('/api/clean', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender: item.domain })
       });
+      const data = await res.json();
+      if (res.ok) {
+        removed += data.removed;
+      } else {
+        failures++;
+        console.error(`Falha ao limpar ${item.domain}:`, data.error);
+      }
     } catch (error) {
+      if (error.message === 'unauthenticated') { hideLoading(); return; }
+      failures++;
       console.error(`Erro ao limpar ${item.domain}:`, error);
     }
   }
 
-  toast('✅ Limpeza concluída!');
+  if (failures > 0) {
+    toast(`⚠️ ${removed} emails movidos; ${failures} remetente(s) falharam`);
+  } else {
+    toast(`✅ ${removed} emails movidos para lixeira`);
+  }
   setTimeout(() => refreshAnalysis(), 1000);
   hideLoading();
 }
