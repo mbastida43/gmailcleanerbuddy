@@ -148,42 +148,33 @@ repositório. Não divulgue publicamente antes da correção.
 
 ---
 
-## Questões abertas (revisão de código de 2026-06-10)
+## Achados da revisão de código de 2026-06-10 — TODOS CORRIGIDOS
 
-Achados confirmados pela revisão de alto esforço, em ordem de severidade,
-ainda não corrigidos:
+Achados confirmados pela revisão de alto esforço e as correções aplicadas:
 
-1. **`cleanAll()` engole falhas silenciosamente** (`public/js/app.js`): usa
-   `fetch` cru (não o `apiFetch` com tratamento de 401) e ignora respostas de
-   erro; se a sessão expirar ou um remetente for rejeitado no meio do loop, o
-   usuário ainda vê "✅ Limpeza concluída!" sem nada ter sido limpo.
-2. **`isAuthError()` pode não reconhecer token revogado** (`server.js`): a
-   classificação usa `error.response.status || error.code` e regex sobre
-   `error.message`, mas o gaxios expõe `error.status`, e um `invalid_grant`
-   pode vir só em `error.response.data.error` com mensagem humana ("Token has
-   been expired or revoked") — o erro vira 500 genérico em vez de 401, e o
-   front-end não volta à tela de login (sessão "presa" até logout manual).
-3. **Erros de cota engolidos na análise** (`server.js`, `/api/analyze`): o
-   `catch` por mensagem só faz `console.error`; com 50 chamadas paralelas, um
-   429/403 de cota do Gmail é realista e as mensagens falhas são puladas em
-   silêncio — o Top 10 sai de dados parciais com resposta 200 sem aviso.
-4. **Remetentes não-email quebram o botão Limpar**: quando o header `From`
-   não casa com os regex (ex.: `undisclosed-recipients:;`), a string crua
-   vira o "remetente" no Top 10; o `/api/clean` a rejeita com 400
-   "Remetente inválido", então essas linhas nunca podem ser limpas.
-5. **Estatísticas enganosas e chamadas desperdiçadas**: `/api/analyze` lista
-   até 5000 IDs (50 páginas) mas analisa só os 1000 primeiros;
-   `totalMessages` (até 5000) é exibido ao lado de um Top 10 calculado sobre
-   uma amostra até 5x menor, e até ~40 chamadas `list()` são desperdiçadas.
-6. **Verificação de Origin é opt-in por rota**: `verifySameOrigin` está só em
-   `/api/clean` e `/auth/logout`; qualquer rota mutante futura que esquecer o
-   middleware perde a camada anti-CSRF — preferir um middleware global para
-   métodos não seguros (POST/PUT/DELETE).
-7. **Arquivos de playbook desatualizados na raiz**: `index.html.old` (antigo
-   `index2.html`, mantido como backup) e `INTRUÇÕES.md` ainda contêm o código
-   ANTIGO e vulnerável (cliente OAuth global, segredo com fallback, `onclick`
-   inline com XSS, `csurf`); não copie código desses arquivos — a referência
-   é o código atual + este documento.
+1. ✅ **`cleanAll()` engolia falhas silenciosamente** — agora usa `apiFetch`
+   (trata 401), conta sucessos/falhas por remetente e o toast reporta o
+   resultado real (`⚠️ X movidos; Y falharam` quando há falhas).
+2. ✅ **`isAuthError()` não reconhecia todas as formas de token revogado** —
+   agora cobre `error.status`, `error.response.status`, `error.code`
+   numérico, o código OAuth em `error.response.data.error` e a mensagem
+   "expired or revoked" do Google.
+3. ✅ **Erros de cota engolidos na análise** — erros de auth dentro do lote
+   agora propagam para o 401; os demais são contados em `failedMessages`,
+   retornados na resposta e exibidos pelo front-end ("Análise parcial").
+4. ✅ **Remetentes não-email quebravam o botão Limpar** — a análise agora
+   normaliza (trim/lowercase) e agrega apenas remetentes que passam na mesma
+   validação do `/api/clean`; linhas impossíveis de limpar não aparecem.
+5. ✅ **Estatísticas enganosas / chamadas desperdiçadas** — a paginação para
+   ao atingir o limite de análise (1000); `totalMessages` agora corresponde
+   ao conjunto realmente analisado e a resposta inclui
+   `analyzedMessages`/`failedMessages`.
+6. ✅ **Origin opt-in por rota** — `verifySameOrigin` virou middleware global
+   para todos os métodos não seguros (POST/PUT/PATCH/DELETE); rotas mutantes
+   futuras ficam protegidas automaticamente.
+7. ✅ **Playbooks desatualizados na raiz** — `index2.html` renomeado para
+   `index.html.old` e `INTRUÇÕES.md` recebeu um aviso destacado de documento
+   histórico ("não use este código").
 
 ### Estado dos módulos npm (pasta `node_modules`)
 

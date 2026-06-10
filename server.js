@@ -107,9 +107,16 @@ app.use('/auth/google', authLimiter);
 app.use('/auth/status', apiLimiter);
 app.use('/auth/logout', apiLimiter);
 
-// Defesa em profundidade contra CSRF em rotas que mudam estado:
-// além de SameSite=lax, rejeita requisições cujo Origin não bata com o host.
+// Defesa em profundidade contra CSRF: além de SameSite=lax, rejeita
+// requisições cujo Origin não bata com o host. Aplicado GLOBALMENTE a todo
+// método não seguro (POST/PUT/PATCH/DELETE) — rotas mutantes futuras ficam
+// protegidas automaticamente, sem wiring por rota.
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
 function verifySameOrigin(req, res, next) {
+  if (SAFE_METHODS.has(req.method)) {
+    return next();
+  }
   const origin = req.get('Origin');
   if (origin) {
     let originHost;
@@ -124,6 +131,8 @@ function verifySameOrigin(req, res, next) {
   }
   next();
 }
+
+app.use(verifySameOrigin);
 
 // ========== OAUTH2 ==========
 
@@ -210,7 +219,7 @@ app.get('/auth/status', (req, res) => {
 });
 
 // 4. Logout — revoga os tokens no Google e destrói a sessão
-app.post('/auth/logout', verifySameOrigin, async (req, res) => {
+app.post('/auth/logout', async (req, res) => {
   const tokens = req.session && req.session.tokens;
   if (tokens && tokens.access_token) {
     try {
@@ -244,11 +253,21 @@ const requireAuth = (req, res, next) => {
 };
 
 // Detecta credenciais expiradas/revogadas para pedir novo login em vez de
-// devolver um erro 500 genérico
+// devolver um erro 500 genérico. Cobre as várias formas do gaxios/googleapis:
+// error.status, error.response.status, error.code numérico, o código OAuth em
+// error.response.data.error ('invalid_grant') e a mensagem humana do Google
+// ('Token has been expired or revoked').
+const AUTH_ERROR_PATTERN = /invalid_grant|invalid_credentials|expired or revoked/i;
+
 function isAuthError(error) {
-  const status = (error.response && error.response.status) || error.code;
-  return status === 401 || status === '401' ||
-         /invalid_grant|invalid_credentials/i.test(error.message || '');
+  if (!error) return false;
+  const status = error.status ||
+    (error.response && error.response.status) ||
+    (typeof error.code === 'number' ? error.code : parseInt(error.code, 10));
+  const oauthCode = error.response && error.response.data && error.response.data.error;
+  return status === 401 ||
+         AUTH_ERROR_PATTERN.test(String(oauthCode || '')) ||
+         AUTH_ERROR_PATTERN.test(error.message || '');
 }
 
 function handleGmailError(req, res, error, fallbackMessage) {
@@ -280,11 +299,12 @@ app.get('/api/analyze', requireAuth, async (req, res) => {
   try {
     const gmail = google.gmail({ version: 'v1', auth: req.oauthClient });
 
-    // Buscar todos os emails (paginado)
+    // Buscar emails (paginado). Só listamos o que vamos de fato analisar —
+    // listar mais páginas desperdiçaria cota e tornaria as estatísticas
+    // enganosas (total alto ao lado de um Top 10 calculado sobre uma amostra).
+    const MAX_ANALYZE = 1000;
     let allMessages = [];
     let pageToken = null;
-    let maxPages = 50; // Limitar para não travar (50 páginas = ~5000 emails)
-    let pagesProcessed = 0;
 
     console.log('🔍 Iniciando análise da caixa postal...');
 
@@ -300,21 +320,22 @@ app.get('/api/analyze', requireAuth, async (req, res) => {
       }
 
       pageToken = response.data.nextPageToken;
-      pagesProcessed++;
 
-      console.log(`📬 Processadas ${allMessages.length} mensagens...`);
+      console.log(`📬 Listadas ${allMessages.length} mensagens...`);
 
-    } while (pageToken && pagesProcessed < maxPages);
+    } while (pageToken && allMessages.length < MAX_ANALYZE);
 
-    console.log(`✅ Total de mensagens encontradas: ${allMessages.length}`);
+    allMessages = allMessages.slice(0, MAX_ANALYZE);
+    console.log(`✅ Total de mensagens a analisar: ${allMessages.length}`);
 
     // Buscar detalhes dos emails (em lotes)
     const senderCounts = {};
     const senderSizes = {};
     const senderCategories = {};
+    let failedMessages = 0;
 
     const batchSize = 50;
-    for (let i = 0; i < Math.min(allMessages.length, 1000); i += batchSize) {
+    for (let i = 0; i < allMessages.length; i += batchSize) {
       const batch = allMessages.slice(i, i + batchSize);
 
       await Promise.all(batch.map(async (message) => {
@@ -330,10 +351,18 @@ app.get('/api/analyze', requireAuth, async (req, res) => {
           const fromHeader = headers.find(h => h.name === 'From');
 
           if (fromHeader) {
-            // Extrair email do remetente
+            // Extrair email do remetente; só agregamos remetentes que o
+            // /api/clean aceitaria — uma string que não é email (ex.:
+            // "undisclosed-recipients:;") geraria uma linha impossível de
+            // limpar no Top 10
             const emailMatch = fromHeader.value.match(/<(.+?)>/) ||
                                fromHeader.value.match(/([^\s]+@[^\s]+)/);
-            const senderEmail = emailMatch ? emailMatch[1] : fromHeader.value;
+            const senderEmail = (emailMatch ? emailMatch[1] : fromHeader.value)
+              .trim().toLowerCase();
+
+            if (!isValidSender(senderEmail)) {
+              return;
+            }
 
             // Contar mensagens
             senderCounts[senderEmail] = (senderCounts[senderEmail] || 0) + 1;
@@ -348,11 +377,18 @@ app.get('/api/analyze', requireAuth, async (req, res) => {
             }
           }
         } catch (err) {
+          // Credencial expirada/revogada precisa virar 401 (tratado no catch
+          // externo); os demais erros (ex.: cota 429) são contados e
+          // reportados ao cliente em vez de engolidos em silêncio
+          if (isAuthError(err)) {
+            throw err;
+          }
+          failedMessages++;
           console.error(`Erro ao processar mensagem ${message.id}:`, err.message);
         }
       }));
 
-      console.log(`📊 Analisados ${Math.min(i + batchSize, allMessages.length)} de ${Math.min(allMessages.length, 1000)} emails...`);
+      console.log(`📊 Analisados ${Math.min(i + batchSize, allMessages.length)} de ${allMessages.length} emails...`);
     }
 
     // Converter para array e ordenar
@@ -369,6 +405,8 @@ app.get('/api/analyze', requireAuth, async (req, res) => {
 
     res.json({
       totalMessages: allMessages.length,
+      analyzedMessages: allMessages.length - failedMessages,
+      failedMessages: failedMessages,
       uniqueSenders: offenders.length,
       offenders: offenders,
       top10: offenders.slice(0, 10)
@@ -392,7 +430,7 @@ function isValidSender(sender) {
 }
 
 // 7. Limpar emails de um remetente
-app.post('/api/clean', verifySameOrigin, requireAuth, async (req, res) => {
+app.post('/api/clean', requireAuth, async (req, res) => {
   const { sender } = req.body || {};
 
   if (!sender) {
