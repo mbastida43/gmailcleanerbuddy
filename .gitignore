@@ -1,1 +1,10 @@
+# Segredos — nunca commitar
 .env
+.env.*
+!.env.example
+
+# Dependências
+node_modules/
+
+# Logs
+*.log
