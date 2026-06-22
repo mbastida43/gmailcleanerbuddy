@@ -1,59 +1,95 @@
 const express = require('express');
 const { google } = require('googleapis');
 const session = require('express-session');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const csrf = require('csurf');
+const crypto = require('crypto');
 const path = require('path');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração do OAuth2
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
-// Middleware
-app.use(express.json());
+function createOAuthClient() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
+}
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use(helmet());
+app.use(limiter);
+app.use(express.json({ limit: '10kb' }));
 app.use(express.static('public'));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'gmail-cleaner-secret-2024',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
+  }
 }));
+app.use(csrf());
 
 // ========== ROTAS DE AUTENTICAÇÃO ==========
 
 // 1. Iniciar OAuth
 app.get('/auth/google', (req, res) => {
+  const oauth2Client = createOAuthClient();
+  const state = crypto.randomBytes(16).toString('hex');
+  req.session.oauthState = state;
+
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: [
       'https://www.googleapis.com/auth/gmail.readonly',
       'https://www.googleapis.com/auth/gmail.modify'
     ],
-    prompt: 'consent'
+    prompt: 'consent',
+    state
   });
+
   res.redirect(authUrl);
 });
 
 // 2. Callback do Google
 app.get('/auth/google/callback', async (req, res) => {
-  const { code } = req.query;
-  
+  const { code, state } = req.query;
+
+  if (!code || !state || state !== req.session.oauthState) {
+    console.error('OAuth callback com estado inválido:', { state, expected: req.session.oauthState });
+    return res.redirect('/?error=auth_state_mismatch');
+  }
+
   if (!code) {
     return res.redirect('/?error=no_code');
   }
 
   try {
+    const oauth2Client = createOAuthClient();
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
     
     // Salvar tokens na sessão
     req.session.tokens = tokens;
     req.session.authenticated = true;
+    delete req.session.oauthState;
     
     res.redirect('/?auth=success');
   } catch (error) {
@@ -70,27 +106,45 @@ app.get('/auth/status', (req, res) => {
   });
 });
 
+// Middleware de autenticação
+function requireAuth(req, res, next) {
+  if (!req.session.tokens) {
+    return res.status(401).json({ error: 'Não autenticado' });
+  }
+  next();
+}
+
 // 4. Logout
-app.post('/auth/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ success: true });
+app.post('/auth/logout', requireAuth, (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Erro no logout:', err);
+      return res.status(500).json({ error: 'Falha ao encerrar sessão' });
+    }
+    res.json({ success: true });
+  });
 });
 
 // ========== ROTAS DA GMAIL API ==========
 
-// Middleware de autenticação
-const requireAuth = (req, res, next) => {
-  if (!req.session.tokens) {
-    return res.status(401).json({ error: 'Não autenticado' });
-  }
+app.get('/auth/csrf-token', requireAuth, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+function getAuthClient(req) {
+  const oauth2Client = createOAuthClient();
   oauth2Client.setCredentials(req.session.tokens);
-  next();
-};
+  return oauth2Client;
+}
+
+function validateSender(sender) {
+  return typeof sender === 'string' && /^[a-zA-Z0-9@._%+-]{3,254}$/.test(sender);
+}
 
 // 5. Buscar email do usuário
 app.get('/api/user', requireAuth, async (req, res) => {
   try {
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
     const profile = await gmail.users.getProfile({ userId: 'me' });
     res.json({ 
       email: profile.data.emailAddress,
@@ -106,7 +160,7 @@ app.get('/api/user', requireAuth, async (req, res) => {
 // 6. Analisar caixa de entrada (Top Offenders)
 app.get('/api/analyze', requireAuth, async (req, res) => {
   try {
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
     
     // Buscar todos os emails (paginado)
     let allMessages = [];
@@ -204,27 +258,32 @@ app.get('/api/analyze', requireAuth, async (req, res) => {
 
   } catch (error) {
     console.error('Erro na análise:', error);
-    res.status(500).json({ error: 'Erro ao analisar emails', details: error.message });
+    res.status(500).json({ error: 'Erro ao analisar emails' });
   }
 });
 
 // 7. Limpar emails de um remetente
 app.post('/api/clean', requireAuth, async (req, res) => {
   const { sender } = req.body;
-  
-  if (!sender) {
+  const sanitizedSender = typeof sender === 'string' ? sender.trim() : '';
+
+  if (!sanitizedSender) {
     return res.status(400).json({ error: 'Remetente não informado' });
   }
 
+  if (!validateSender(sanitizedSender)) {
+    return res.status(400).json({ error: 'Remetente inválido' });
+  }
+
   try {
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
     
     // Buscar emails do remetente
-    const searchQuery = `from:${sender}`;
+    const searchQuery = `from:${sanitizedSender}`;
     const response = await gmail.users.messages.list({
       userId: 'me',
       q: searchQuery,
-      maxResults: 500
+      maxResults: 200
     });
 
     if (!response.data.messages || response.data.messages.length === 0) {
@@ -244,13 +303,13 @@ app.post('/api/clean', requireAuth, async (req, res) => {
 
     res.json({ 
       removed: messageIds.length,
-      sender: sender,
+      sender: sanitizedSender,
       message: `${messageIds.length} emails movidos para lixeira`
     });
 
   } catch (error) {
     console.error('Erro ao limpar emails:', error);
-    res.status(500).json({ error: 'Erro ao limpar emails', details: error.message });
+    res.status(500).json({ error: 'Erro ao limpar emails' });
   }
 });
 
@@ -273,6 +332,20 @@ function categorizeSender(email) {
   
   return 'Outros';
 }
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Recurso não encontrado' });
+});
+
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    console.error('Token CSRF inválido:', err);
+    return res.status(403).json({ error: 'Requisição não autorizada' });
+  }
+
+  console.error('Erro interno no servidor:', err);
+  res.status(500).json({ error: 'Erro interno no servidor' });
+});
 
 // ========== SERVIDOR ==========
 
