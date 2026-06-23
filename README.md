@@ -13,6 +13,7 @@
 ```bash
 npm install
 npm start        # or: npm run dev  (reloads when saving)
+```
 
 # 🚀 Gmail Cleaner Buddy — Configuração OAuth2
 
@@ -58,7 +59,7 @@ lixeira.
 ```bash
 npm install
 npm start        # o: npm run dev  (recarga al guardar)
-
+```
 
 Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el acceso, y
 los 10 principales remitentes aparecerán con el botón Limpiar para mover correos electrónicos a
@@ -84,6 +85,7 @@ la papelera.
 ```bash
 npm install
 npm start        # ou : npm run dev  (recharge lors de l’enregistrement)
+```
 
 Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l’accès, et
 les 10 principaux expéditeurs apparaîtront avec le bouton Nettoyer pour déplacer les e-mails vers
