@@ -29,9 +29,11 @@ Open http://localhost:3000, click Sign in with Google, authorize access, and the
 
 Aplicación en fase de pruebas.
 
-Node.js 16+ instalado
-Cuenta de Google (Gmail)
-Google Cloud Console configurado
+
+- Node.js 16+ instalado
+- Cuenta de Google (Gmail)
+- Google Cloud Console configurado
+
 
 ---
 
@@ -54,9 +56,12 @@ Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el 
 
 Application en phase de test.
 
-Node.js 16+ installé
-Compte Google (Gmail)
-Google Cloud Console configuré
+- Node.js 16+ installé
+- Compte Google (Gmail)
+- Google Cloud Console configuré
+
+
+---
 
 ## ▶️ Installer et exécuter
 
