@@ -31,7 +31,7 @@ Google Cloud Console configurado
 
 ---
 
-▶️ Instalar y ejecutar
+## ▶️ Instalar y ejecutar
 
 ```bash
 npm install
