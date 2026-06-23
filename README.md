@@ -15,14 +15,14 @@ Application in testing phase.
 ```bash
 npm install
 npm start        # or: npm run dev  (reloads when saving)
-
+```
 
 Open http://localhost:3000, click Sign in with Google, authorize access, and the Top 10 senders will appear with the Clean button to move emails to the trash.
 
 ---
 
-🚀 Gmail Cleaner Buddy — Configuración OAuth2
-📋 Requisitos previos
+# 🚀 Gmail Cleaner Buddy — Configuración OAuth2
+## 📋 Requisitos previos
 
 Aplicación en fase de pruebas.
 
@@ -44,8 +44,8 @@ Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el 
 ---
 
 
-🚀 Gmail Cleaner Buddy — Configuration OAuth2
-📋 Prérequis
+# 🚀 Gmail Cleaner Buddy — Configuration OAuth2
+## 📋 Prérequis
 
 Application en phase de test.
 
