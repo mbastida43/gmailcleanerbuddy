@@ -43,7 +43,8 @@ lixeira.
 
 ## Español
 
-```markdown
+---
+
 # 🚀 Gmail Cleaner Buddy — Configuración OAuth2
 
 ## 📋 Requisitos previos (aplicación en fase de pruebas)
