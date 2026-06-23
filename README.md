@@ -43,6 +43,7 @@ Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el 
 
 ---
 
+
 🚀 Gmail Cleaner Buddy — Configuration OAuth2
 📋 Prérequis
 
@@ -51,9 +52,6 @@ Application en phase de test.
 Node.js 16+ installé
 Compte Google (Gmail)
 Google Cloud Console configuré
-
----
-
 
 ▶️ Installer et exécuter
 
