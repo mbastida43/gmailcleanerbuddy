@@ -52,7 +52,7 @@ Node.js 16+ installé
 Compte Google (Gmail)
 Google Cloud Console configuré
 
-▶️ Installer et exécuter
+## ▶️ Installer et exécuter
 
 ```bash
 npm install
@@ -65,109 +65,3 @@ Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l�
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# 🚀 Gmail Cleaner Buddy — OAuth2 Configuration
-
-## 📋 Prerequisites (application in testing phase)
-
-- Node.js 16+ installed
-- Google account (Gmail)
-- Google Cloud Console configured
-
----
-
-## ▶️ Install and run
-
-```bash
-npm install
-npm start        # or: npm run dev  (reloads when saving)
-```
-
-# 🚀 Gmail Cleaner Buddy — Configuração OAuth2
-
-## 📋 Pré-requisitos (aplicação em fase de testes)
-
-- Node.js 16+ instalado
-- Conta Google (Gmail)
-- Google Cloud Console configurado
----
-Open http://localhost:3000, click Sign in with Google, authorize access, and
-the Top 10 senders will appear with the Clean button to move emails to
-the trash.
-
----
-## ▶️ Instalar e executar
-
-```bash
-npm install
-npm start        # ou: npm run dev  (recarrega ao salvar)
-```
-
-Abra **http://localhost:3000**, clique em **Entrar com Google**, autorize, e
-os Top 10 remetentes aparecem com o botão **Limpar** para mover emails à
-lixeira.
-
----
-
-## Español
-
----
-
-# 🚀 Gmail Cleaner Buddy — Configuración OAuth2
-
-## 📋 Requisitos previos (aplicación en fase de pruebas)
-
-- Node.js 16+ instalado
-- Cuenta de Google (Gmail)
-- Google Cloud Console configurado
-
----
-
-## ▶️ Instalar y ejecutar
-
-```bash
-npm install
-npm start        # o: npm run dev  (recarga al guardar)
-```
-
-Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el acceso, y
-los 10 principales remitentes aparecerán con el botón Limpiar para mover correos electrónicos a
-la papelera.
-
----
-
-## Français
-
-```markdown
-# 🚀 Gmail Cleaner Buddy — Configuration OAuth2
-
-## 📋 Prérequis (application en phase de test)
-
-- Node.js 16+ installé
-- Compte Google (Gmail)
-- Google Cloud Console configuré
-
----
-
-## ▶️ Installer et exécuter
-
-```bash
-npm install
-npm start        # ou : npm run dev  (recharge lors de l’enregistrement)
-```
-
-Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l’accès, et
-les 10 principaux expéditeurs apparaîtront avec le bouton Nettoyer pour déplacer les e-mails vers
-la corbeille.
