@@ -21,8 +21,22 @@ Open http://localhost:3000, click Sign in with Google, authorize access, and the
 
 ---
 
+# 🚀 Gmail Cleaner Buddy — Configuração OAuth2
+## 📋 Requisitos prévios
+
+Aplicação em fase de testes.
 
 
+- Node.js 16+ instalado
+- Conta do Google (Gmail)
+- Google Cloud Console configurado
+
+
+---
+
+Abrir http://localhost:3000, clique em Iniciar sessão com o Google, autorize o acesso, e os 10 principais remetentes apareceção com o botão Limpar para mover os emails para a lixeira.
+
+---
 
 # 🚀 Gmail Cleaner Buddy — Configuración OAuth2
 ## 📋 Requisitos previos
