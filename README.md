@@ -1,3 +1,4 @@
+
 # 🚀 Gmail Cleaner Buddy — OAuth2 Configuration
 
 ## 📋 Prerequisites
@@ -20,6 +21,9 @@ Open http://localhost:3000, click Sign in with Google, authorize access, and the
 
 ---
 
+
+
+
 # 🚀 Gmail Cleaner Buddy — Configuración OAuth2
 ## 📋 Requisitos previos
 
@@ -41,6 +45,8 @@ npm start        # o: npm run dev  (recarga al guardar)
 Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el acceso, y los 10 principales remitentes aparecerán con el botón Limpiar para mover los correos electrónicos a la papelera.
 
 ---
+
+
 
 
 # 🚀 Gmail Cleaner Buddy — Configuration OAuth2
