@@ -8,7 +8,6 @@ Application in testing phase.
 - Google account (Gmail)
 - Google Cloud Console configured
 
----
 
 ## ▶️ Install and run
 
@@ -61,6 +60,7 @@ npm start        # ou : npm run dev  (recharge lors de l’enregistrement)
 ```
 
 Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l’accès, et les 10 principaux expéditeurs apparaîtront avec le bouton Nettoyer pour déplacer les e-mails vers la corbeille.
+
 ---
 
 
