@@ -58,7 +58,7 @@ Google Cloud Console configuré
 ```bash
 npm install
 npm start        # ou : npm run dev  (recharge lors de l’enregistrement)
----
+```
 
 Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l’accès, et les 10 principaux expéditeurs apparaîtront avec le bouton Nettoyer pour déplacer les e-mails vers la corbeille.
 ---
