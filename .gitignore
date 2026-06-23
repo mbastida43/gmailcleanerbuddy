@@ -1,1 +1,22 @@
+# Dependências
+node_modules/
+
+# Segredos e ambiente — NUNCA versionar
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Logs
+npm-debug.log*
+*.log
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Arquivos históricos
+*.old
