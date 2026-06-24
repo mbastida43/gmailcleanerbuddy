@@ -5,7 +5,7 @@
 
 Application in testing phase.
 
-- Node.js 16+ installed
+- Node.js 18+ installed
 - Google account (Gmail)
 - Google Cloud Console configured
 
@@ -27,7 +27,7 @@ Open http://localhost:3000, click Sign in with Google, authorize access, and the
 Aplicação em fase de testes.
 
 
-- Node.js 16+ instalado
+- Node.js 18+ instalado
 - Conta do Google (Gmail)
 - Google Cloud Console configurado
 
@@ -44,7 +44,7 @@ Abrir http://localhost:3000, clique em Iniciar sessão com o Google, autorize o 
 Aplicación en fase de pruebas.
 
 
-- Node.js 16+ instalado
+- Node.js 18+ instalado
 - Cuenta de Google (Gmail)
 - Google Cloud Console configurado
 
@@ -70,7 +70,7 @@ Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el 
 
 Application en phase de test.
 
-- Node.js 16+ installé
+- Node.js 18+ installé
 - Compte Google (Gmail)
 - Google Cloud Console configuré
 
