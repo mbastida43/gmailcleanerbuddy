@@ -31,7 +31,7 @@ if (process.env.SESSION_SECRET!.length < 32) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const isProd = process.env.NODE_ENV === 'production';
 
 if (isProd) {
@@ -467,8 +467,22 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ========== SERVIDOR ==========
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, 'localhost', () => {
   console.log(`\n🚀 Gmail Cleaner Buddy rodando em http://localhost:${PORT}\n`);
+});
+
+// Erro ao subir o servidor (ex.: porta ocupada) com mensagem amigável
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(
+      `\n❌ A porta ${PORT} já está em uso. ` +
+        `Encerre o processo que a está usando ou defina outra porta com ` +
+        `a variável de ambiente PORT (ex.: PORT=3001 npm start).\n`
+    );
+  } else {
+    console.error('\n❌ Erro ao iniciar o servidor:', err.message, '\n');
+  }
+  process.exit(1);
 });
 
 // Encerramento gracioso (Twelve-Factor IX)
