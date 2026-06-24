@@ -20,3 +20,8 @@ Thumbs.db
 
 # Arquivos históricos
 *.old
+
+# Build TypeScript (gerado a partir de src/)
+/dist/
+/public/app.js
+/public/app.js.map

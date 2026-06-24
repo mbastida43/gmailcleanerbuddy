@@ -1,10 +1,28 @@
-let currentData = null;
-let currentLang = 'pt';
+interface Offender {
+  domain: string;
+  count: number;
+  size: number;
+  category: string;
+}
+
+interface AnalyzeData {
+  totalMessages: number;
+  analyzedMessages: number;
+  failedMessages: number;
+  uniqueSenders: number;
+  offenders: Offender[];
+  top10: Offender[];
+}
+
+type Lang = 'pt' | 'en' | 'es' | 'fr';
+
+let currentData: AnalyzeData | null = null;
+let currentLang: Lang = 'pt';
 
 // ===================== i18n =====================
-const LOCALES = { pt: 'pt-BR', en: 'en-US', es: 'es-ES', fr: 'fr-FR' };
+const LOCALES: Record<Lang, string> = { pt: 'pt-BR', en: 'en-US', es: 'es-ES', fr: 'fr-FR' };
 
-const TRANSLATIONS = {
+const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   pt: {
     'subtitle': '🔐 Conectado ao Gmail via OAuth2',
     'auth.title': '🔒 Conectar ao Gmail',
@@ -127,29 +145,29 @@ const TRANSLATIONS = {
   }
 };
 
-function t(key, params = {}) {
+function t(key: string, params: Record<string, string | number> = {}): string {
   const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.pt;
   let str = dict[key] ?? TRANSLATIONS.pt[key] ?? key;
   for (const [k, v] of Object.entries(params)) {
-    str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
   }
   return str;
 }
 
-function applyLanguage(lang) {
-  if (!TRANSLATIONS[lang]) lang = 'pt';
-  currentLang = lang;
-  localStorage.setItem('lang', lang);
-  document.documentElement.lang = LOCALES[lang];
+function applyLanguage(lang: string): void {
+  const safeLang: Lang = (lang in TRANSLATIONS ? lang : 'pt') as Lang;
+  currentLang = safeLang;
+  localStorage.setItem('lang', safeLang);
+  document.documentElement.lang = LOCALES[safeLang];
 
-  const select = document.getElementById('langSelect');
-  if (select) select.value = lang;
+  const select = document.getElementById('langSelect') as HTMLSelectElement | null;
+  if (select) select.value = safeLang;
 
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.getAttribute('data-i18n'));
+  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.getAttribute('data-i18n')!);
   });
-  document.querySelectorAll('[data-i18n-html]').forEach(el => {
-    el.innerHTML = t(el.getAttribute('data-i18n-html'));
+  document.querySelectorAll<HTMLElement>('[data-i18n-html]').forEach((el) => {
+    el.innerHTML = t(el.getAttribute('data-i18n-html')!);
   });
 
   // Re-render the list so dynamic strings (e.g. the "Clean" buttons) update too.
@@ -161,11 +179,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('refreshButton')?.addEventListener('click', refreshAnalysis);
   document.getElementById('cleanAllButton')?.addEventListener('click', cleanAll);
   document.getElementById('logoutButton')?.addEventListener('click', logout);
-  document.getElementById('langSelect')?.addEventListener('change', (e) => applyLanguage(e.target.value));
+  document.getElementById('langSelect')?.addEventListener('change', (e) =>
+    applyLanguage((e.target as HTMLSelectElement).value)
+  );
 
   const saved = localStorage.getItem('lang');
   const browser = (navigator.language || 'pt').slice(0, 2);
-  applyLanguage(saved || (TRANSLATIONS[browser] ? browser : 'pt'));
+  applyLanguage(saved || (browser in TRANSLATIONS ? browser : 'pt'));
 
   const params = new URLSearchParams(window.location.search);
 
@@ -181,7 +201,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-async function checkAuth() {
+async function checkAuth(): Promise<void> {
   try {
     const res = await fetch('/auth/status');
     if (!res.ok) return;
@@ -194,12 +214,12 @@ async function checkAuth() {
   }
 }
 
-function loginGoogle() {
+function loginGoogle(): void {
   window.location.href = '/auth/google';
 }
 
 // Wrapper que trata 401 (sessão expirada) de forma centralizada
-async function apiFetch(url, options = {}) {
+async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const res = await fetch(url, options);
   if (res.status === 401) {
     toast(t('toast.sessionExpired'));
@@ -209,7 +229,7 @@ async function apiFetch(url, options = {}) {
   return res;
 }
 
-async function logout() {
+async function logout(): Promise<void> {
   try {
     const res = await apiFetch('/auth/logout', {
       method: 'POST',
@@ -217,28 +237,28 @@ async function logout() {
     });
     if (!res.ok) throw new Error('Falha no logout');
     location.reload();
-  } catch (error) {
-    if (error.message !== 'unauthorized') {
+  } catch (error: any) {
+    if (error?.message !== 'unauthorized') {
       console.error('Erro ao desconectar:', error);
       toast(t('toast.logoutError'));
     }
   }
 }
 
-async function loadUserData() {
+async function loadUserData(): Promise<void> {
   showLoading();
   try {
     const userRes = await apiFetch('/api/user');
     if (!userRes.ok) throw new Error('Falha ao carregar usuário');
     const userData = await userRes.json();
-    document.getElementById('userEmail').textContent = `📧 ${userData.email}`;
+    document.getElementById('userEmail')!.textContent = `📧 ${userData.email}`;
 
-    document.getElementById('authScreen').style.display = 'none';
-    document.getElementById('resultsScreen').style.display = 'block';
+    document.getElementById('authScreen')!.style.display = 'none';
+    document.getElementById('resultsScreen')!.style.display = 'block';
 
     await refreshAnalysis();
-  } catch (error) {
-    if (error.message !== 'unauthorized') {
+  } catch (error: any) {
+    if (error?.message !== 'unauthorized') {
       console.error('Erro ao carregar dados:', error);
       toast(t('toast.loadError'));
     }
@@ -247,13 +267,13 @@ async function loadUserData() {
   }
 }
 
-async function refreshAnalysis() {
+async function refreshAnalysis(): Promise<void> {
   showLoading();
   toast(t('toast.analyzing'));
   try {
     const res = await apiFetch('/api/analyze');
     if (!res.ok) throw new Error('Falha na análise');
-    const data = await res.json();
+    const data: AnalyzeData = await res.json();
     currentData = data;
     renderResults(data);
     if (data.failedMessages > 0) {
@@ -261,8 +281,8 @@ async function refreshAnalysis() {
     } else {
       toast(t('toast.analyzeDone'));
     }
-  } catch (error) {
-    if (error.message !== 'unauthorized') {
+  } catch (error: any) {
+    if (error?.message !== 'unauthorized') {
       console.error('Erro na análise:', error);
       toast(t('toast.analyzeError'));
     }
@@ -271,13 +291,13 @@ async function refreshAnalysis() {
   }
 }
 
-function renderResults(data) {
-  document.getElementById('totalEmails').textContent = formatNumber(data.totalMessages);
-  document.getElementById('totalSize').textContent = formatSize(data.offenders.reduce((s, o) => s + o.size, 0));
-  document.getElementById('uniqueSenders').textContent = formatNumber(data.uniqueSenders);
-  document.getElementById('top10Count').textContent = formatNumber(data.top10.reduce((s, o) => s + o.count, 0));
+function renderResults(data: AnalyzeData): void {
+  document.getElementById('totalEmails')!.textContent = formatNumber(data.totalMessages);
+  document.getElementById('totalSize')!.textContent = formatSize(data.offenders.reduce((s, o) => s + o.size, 0));
+  document.getElementById('uniqueSenders')!.textContent = formatNumber(data.uniqueSenders);
+  document.getElementById('top10Count')!.textContent = formatNumber(data.top10.reduce((s, o) => s + o.count, 0));
 
-  const list = document.getElementById('offendersList');
+  const list = document.getElementById('offendersList')!;
   list.innerHTML = '';
 
   data.top10.forEach((item, i) => {
@@ -321,7 +341,7 @@ function renderResults(data) {
   });
 }
 
-async function cleanSender(sender) {
+async function cleanSender(sender: string): Promise<void> {
   if (!confirm(t('confirm.cleanSender', { sender }))) return;
   showLoading();
   try {
@@ -337,8 +357,8 @@ async function cleanSender(sender) {
     const data = await res.json();
     toast(t('toast.cleaned', { n: data.removed }));
     await refreshAnalysis();
-  } catch (error) {
-    if (error.message !== 'unauthorized') {
+  } catch (error: any) {
+    if (error?.message !== 'unauthorized') {
       console.error('Erro ao limpar:', error);
       toast(`❌ ${error.message}`);
     }
@@ -347,7 +367,7 @@ async function cleanSender(sender) {
   }
 }
 
-async function cleanAll() {
+async function cleanAll(): Promise<void> {
   if (!currentData?.top10?.length) return;
   if (!confirm(t('confirm.cleanAll'))) return;
 
@@ -369,8 +389,8 @@ async function cleanAll() {
       } else {
         totalFailed++;
       }
-    } catch (error) {
-      if (error.message === 'unauthorized') { hideLoading(); return; }
+    } catch (error: any) {
+      if (error?.message === 'unauthorized') { hideLoading(); return; }
       totalFailed++;
     }
   }
@@ -384,19 +404,19 @@ async function cleanAll() {
   hideLoading();
 }
 
-function showLoading() { document.getElementById('loading').classList.add('show'); }
-function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+function showLoading(): void { document.getElementById('loading')!.classList.add('show'); }
+function hideLoading(): void { document.getElementById('loading')!.classList.remove('show'); }
 
-function toast(msg) {
-  const el = document.getElementById('toast');
+function toast(msg: string): void {
+  const el = document.getElementById('toast')!;
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-function formatNumber(n) { return Number(n).toLocaleString(LOCALES[currentLang] || 'pt-BR'); }
+function formatNumber(n: number): string { return Number(n).toLocaleString(LOCALES[currentLang] || 'pt-BR'); }
 
-function formatSize(bytes) {
+function formatSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';

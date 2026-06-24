@@ -1,10 +1,11 @@
-const express = require('express');
-const { google } = require('googleapis');
-const session = require('express-session');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const crypto = require('crypto');
-require('dotenv').config();
+import express, { NextFunction, Request, Response } from 'express';
+import { google } from 'googleapis';
+import session from 'express-session';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
+import { OAuth2Client, exchangeCodeForTokens } from './types/google';
+import 'dotenv/config';
 
 // ========== VALIDAÇÃO DE CONFIGURAÇÃO (Twelve-Factor: falha rápida) ==========
 // O servidor NÃO inicia se faltar qualquer variável obrigatória ou se o
@@ -14,16 +15,16 @@ const REQUIRED_ENV = [
   'GOOGLE_CLIENT_SECRET',
   'GOOGLE_REDIRECT_URI',
   'SESSION_SECRET'
-];
+] as const;
 
-const missing = REQUIRED_ENV.filter((name) => !process.env[name] || !process.env[name].trim());
+const missing = REQUIRED_ENV.filter((name) => !process.env[name] || !process.env[name]?.trim());
 if (missing.length > 0) {
   console.error(`\n❌ Variáveis de ambiente obrigatórias ausentes: ${missing.join(', ')}`);
   console.error('   Copie .env.example para .env e preencha os valores. Veja INSTRUCTIONS.md.\n');
   process.exit(1);
 }
 
-if (process.env.SESSION_SECRET.length < 32) {
+if (process.env.SESSION_SECRET!.length < 32) {
   console.error('\n❌ SESSION_SECRET muito curto. Use 32+ caracteres.');
   console.error('   Gere um com: openssl rand -hex 32\n');
   process.exit(1);
@@ -37,7 +38,7 @@ if (isProd) {
   app.set('trust proxy', 1);
 }
 
-function createOAuthClient() {
+function createOAuthClient(): OAuth2Client {
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -84,7 +85,7 @@ app.use(express.static('public'));
 
 app.use(session({
   name: 'gcb.sid',
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET!,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -98,49 +99,53 @@ app.use(session({
 // ========== CSRF (defesa em profundidade via verificação de Origin) ==========
 // Substitui o pacote `csurf` (arquivado/deprecado). Todo método que muda
 // estado precisa de Origin/Referer pertencente ao próprio host.
-function verifySameOrigin(req, res, next) {
+function verifySameOrigin(req: Request, res: Response, next: NextFunction): void {
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
   if (safeMethods.includes(req.method)) return next();
 
   const origin = req.get('origin') || req.get('referer');
   if (!origin) {
-    return res.status(403).json({ error: 'Origem ausente' });
+    res.status(403).json({ error: 'Origem ausente' });
+    return;
   }
 
-  let originHost;
+  let originHost: string;
   try {
     originHost = new URL(origin).host;
-  } catch (_) {
-    return res.status(403).json({ error: 'Origem inválida' });
+  } catch {
+    res.status(403).json({ error: 'Origem inválida' });
+    return;
   }
 
   if (originHost !== req.get('host')) {
-    return res.status(403).json({ error: 'Requisição não autorizada' });
+    res.status(403).json({ error: 'Requisição não autorizada' });
+    return;
   }
   next();
 }
 app.use(verifySameOrigin);
 
 // ========== AUTENTICAÇÃO ==========
-function requireAuth(req, res, next) {
+function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (!req.session.tokens) {
-    return res.status(401).json({ error: 'Não autenticado' });
+    res.status(401).json({ error: 'Não autenticado' });
+    return;
   }
   next();
 }
 
-function getAuthClient(req) {
+function getAuthClient(req: Request): OAuth2Client {
   const oauth2Client = createOAuthClient();
-  oauth2Client.setCredentials(req.session.tokens);
+  oauth2Client.setCredentials(req.session.tokens!);
   return oauth2Client;
 }
 
-function validateSender(sender) {
+function validateSender(sender: unknown): sender is string {
   return typeof sender === 'string' && /^[a-zA-Z0-9@._%+-]{3,254}$/.test(sender);
 }
 
 // 1. Iniciar OAuth
-app.get('/auth/google', authLimiter, (req, res) => {
+app.get('/auth/google', authLimiter, (req: Request, res: Response) => {
   const oauth2Client = createOAuthClient();
   const state = crypto.randomBytes(32).toString('hex');
   req.session.oauthState = state;
@@ -156,7 +161,7 @@ app.get('/auth/google', authLimiter, (req, res) => {
 });
 
 // 2. Callback do Google
-app.get('/auth/google/callback', authLimiter, async (req, res) => {
+app.get('/auth/google/callback', authLimiter, async (req: Request, res: Response) => {
   const { code, state } = req.query;
   const expectedState = req.session.oauthState;
 
@@ -167,55 +172,59 @@ app.get('/auth/google/callback', authLimiter, async (req, res) => {
     state.length === expectedState.length &&
     crypto.timingSafeEqual(Buffer.from(state), Buffer.from(expectedState));
 
-  if (!code || !stateOk) {
-    return res.redirect('/?error=auth_state_mismatch');
+  if (!code || typeof code !== 'string' || !stateOk) {
+    res.redirect('/?error=auth_state_mismatch');
+    return;
   }
 
   try {
     const oauth2Client = createOAuthClient();
-    const { tokens } = await oauth2Client.getToken(code);
+    const tokens = await exchangeCodeForTokens(oauth2Client, code);
 
     // Regenera a sessão para prevenir fixação de sessão (OWASP A07)
     req.session.regenerate((err) => {
       if (err) {
         console.error('Erro ao regenerar sessão:', err);
-        return res.redirect('/?error=auth_failed');
+        res.redirect('/?error=auth_failed');
+        return;
       }
       req.session.tokens = tokens;
       req.session.save((saveErr) => {
         if (saveErr) {
           console.error('Erro ao salvar sessão:', saveErr);
-          return res.redirect('/?error=auth_failed');
+          res.redirect('/?error=auth_failed');
+          return;
         }
         res.redirect('/?auth=success');
       });
     });
-  } catch (error) {
-    console.error('Erro no OAuth callback:', error.message);
+  } catch (error: any) {
+    console.error('Erro no OAuth callback:', error?.message);
     res.redirect('/?error=auth_failed');
   }
 });
 
 // 3. Status (sem expor detalhes internos)
-app.get('/auth/status', (req, res) => {
+app.get('/auth/status', (req: Request, res: Response) => {
   res.json({ authenticated: !!req.session.tokens });
 });
 
 // 4. Logout — revoga token no Google e destrói sessão
-app.post('/auth/logout', requireAuth, async (req, res) => {
+app.post('/auth/logout', requireAuth, async (req: Request, res: Response) => {
   try {
     const oauth2Client = getAuthClient(req);
-    if (req.session.tokens.access_token) {
+    if (req.session.tokens?.access_token) {
       await oauth2Client.revokeToken(req.session.tokens.access_token).catch(() => {});
     }
-  } catch (error) {
-    console.error('Erro ao revogar token:', error.message);
+  } catch (error: any) {
+    console.error('Erro ao revogar token:', error?.message);
   }
 
   req.session.destroy((err) => {
     if (err) {
       console.error('Erro no logout:', err);
-      return res.status(500).json({ error: 'Falha ao encerrar sessão' });
+      res.status(500).json({ error: 'Falha ao encerrar sessão' });
+      return;
     }
     res.clearCookie('gcb.sid');
     res.json({ success: true });
@@ -225,7 +234,7 @@ app.post('/auth/logout', requireAuth, async (req, res) => {
 // ========== GMAIL API ==========
 
 // 5. Perfil do usuário
-app.get('/api/user', apiLimiter, requireAuth, async (req, res) => {
+app.get('/api/user', apiLimiter, requireAuth, async (req: Request, res: Response) => {
   try {
     const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
     const profile = await gmail.users.getProfile({ userId: 'me' });
@@ -234,8 +243,8 @@ app.get('/api/user', apiLimiter, requireAuth, async (req, res) => {
       messagesTotal: profile.data.messagesTotal,
       threadsTotal: profile.data.threadsTotal
     });
-  } catch (error) {
-    console.error('Erro ao buscar perfil:', error.message);
+  } catch (error: any) {
+    console.error('Erro ao buscar perfil:', error?.message);
     res.status(500).json({ error: 'Erro ao buscar perfil' });
   }
 });
@@ -243,31 +252,51 @@ app.get('/api/user', apiLimiter, requireAuth, async (req, res) => {
 // 6. Analisar caixa de entrada (Top Offenders)
 const MAX_ANALYZE = 1000;
 
-app.get('/api/analyze', apiLimiter, requireAuth, async (req, res) => {
+interface Offender {
+  domain: string;
+  count: number;
+  size: number;
+  category: string;
+}
+
+interface AnalyzeResponse {
+  totalMessages: number;
+  analyzedMessages: number;
+  failedMessages: number;
+  uniqueSenders: number;
+  offenders: Offender[];
+  top10: Offender[];
+}
+
+app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Response) => {
   try {
     const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
 
-    let allMessages = [];
-    let pageToken = null;
+    async function fetchMessagePage(token: string | undefined) {
+      return gmail.users.messages.list({
+        userId: 'me',
+        maxResults: 100,
+        pageToken: token
+      });
+    }
+
+    let allMessages: { id?: string | null }[] = [];
+    let pageToken: string | undefined;
 
     // Para de paginar assim que tiver mensagens suficientes para a análise
     do {
-      const response = await gmail.users.messages.list({
-        userId: 'me',
-        maxResults: 100,
-        pageToken
-      });
+      const response = await fetchMessagePage(pageToken);
       if (response.data.messages) {
         allMessages = allMessages.concat(response.data.messages);
       }
-      pageToken = response.data.nextPageToken;
+      pageToken = response.data.nextPageToken ?? undefined;
     } while (pageToken && allMessages.length < MAX_ANALYZE);
 
     const toAnalyze = allMessages.slice(0, MAX_ANALYZE);
 
-    const senderCounts = {};
-    const senderSizes = {};
-    const senderCategories = {};
+    const senderCounts: Record<string, number> = {};
+    const senderSizes: Record<string, number> = {};
+    const senderCategories: Record<string, string> = {};
     let failedMessages = 0;
 
     const batchSize = 50;
@@ -278,14 +307,14 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req, res) => {
         try {
           const details = await gmail.users.messages.get({
             userId: 'me',
-            id: message.id,
+            id: message.id!,
             format: 'metadata',
             metadataHeaders: ['From']
           });
 
-          const headers = details.data.payload.headers || [];
+          const headers = details.data.payload?.headers || [];
           const fromHeader = headers.find((h) => h.name === 'From');
-          if (!fromHeader) return;
+          if (!fromHeader || !fromHeader.value) return;
 
           const emailMatch =
             fromHeader.value.match(/<(.+?)>/) ||
@@ -310,7 +339,7 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req, res) => {
       }));
     }
 
-    const offenders = Object.keys(senderCounts).map((email) => ({
+    const offenders: Offender[] = Object.keys(senderCounts).map((email) => ({
       domain: email,
       count: senderCounts[email],
       size: senderSizes[email] || 0,
@@ -318,32 +347,36 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req, res) => {
     }));
     offenders.sort((a, b) => b.count - a.count);
 
-    res.json({
+    const responseBody: AnalyzeResponse = {
       totalMessages: toAnalyze.length,
       analyzedMessages: toAnalyze.length - failedMessages,
       failedMessages,
       uniqueSenders: offenders.length,
       offenders,
       top10: offenders.slice(0, 10)
-    });
-  } catch (error) {
+    };
+    res.json(responseBody);
+  } catch (error: any) {
     if (isAuthError(error)) {
-      return res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+      res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+      return;
     }
-    console.error('Erro na análise:', error.message);
+    console.error('Erro na análise:', error?.message);
     res.status(500).json({ error: 'Erro ao analisar emails' });
   }
 });
 
 // 7. Limpar emails de um remetente (move para lixeira)
-app.post('/api/clean', apiLimiter, requireAuth, async (req, res) => {
+app.post('/api/clean', apiLimiter, requireAuth, async (req: Request, res: Response) => {
   const sanitizedSender = typeof req.body.sender === 'string' ? req.body.sender.trim() : '';
 
   if (!sanitizedSender) {
-    return res.status(400).json({ error: 'Remetente não informado' });
+    res.status(400).json({ error: 'Remetente não informado' });
+    return;
   }
   if (!validateSender(sanitizedSender)) {
-    return res.status(400).json({ error: 'Remetente inválido' });
+    res.status(400).json({ error: 'Remetente inválido' });
+    return;
   }
 
   try {
@@ -358,10 +391,11 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req, res) => {
     });
 
     if (!response.data.messages || response.data.messages.length === 0) {
-      return res.json({ removed: 0, message: 'Nenhum email encontrado' });
+      res.json({ removed: 0, message: 'Nenhum email encontrado' });
+      return;
     }
 
-    const messageIds = response.data.messages.map((m) => m.id);
+    const messageIds = response.data.messages.map((m) => m.id!);
 
     // messages.trash move corretamente para a Lixeira (diferente de só
     // adicionar o label TRASH via batchModify, que é incompleto).
@@ -385,17 +419,18 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req, res) => {
         ? `${removed} movidos para a lixeira; ${failed} falharam`
         : `${removed} emails movidos para a lixeira`
     });
-  } catch (error) {
+  } catch (error: any) {
     if (isAuthError(error)) {
-      return res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+      res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+      return;
     }
-    console.error('Erro ao limpar emails:', error.message);
+    console.error('Erro ao limpar emails:', error?.message);
     res.status(500).json({ error: 'Erro ao limpar emails' });
   }
 });
 
 // ========== AUXILIARES ==========
-function isAuthError(error) {
+function isAuthError(error: any): boolean {
   const status = error?.status || error?.response?.status || error?.code;
   if (status === 401 || status === 403) return true;
   const oauthCode = error?.response?.data?.error;
@@ -404,7 +439,7 @@ function isAuthError(error) {
   return msg.includes('expired or revoked') || msg.includes('invalid credentials');
 }
 
-function categorizeSender(email) {
+function categorizeSender(email: string): string {
   const domain = email.toLowerCase();
   if (domain.includes('linkedin')) return 'Rede Social';
   if (domain.includes('facebook') || domain.includes('instagram')) return 'Rede Social';
@@ -421,12 +456,12 @@ function categorizeSender(email) {
 }
 
 // 404
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Recurso não encontrado' });
 });
 
 // Handler de erro genérico (não vaza detalhes ao cliente)
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Erro interno no servidor:', err.message);
   res.status(500).json({ error: 'Erro interno no servidor' });
 });
@@ -437,7 +472,7 @@ const server = app.listen(PORT, () => {
 });
 
 // Encerramento gracioso (Twelve-Factor IX)
-function shutdown(signal) {
+function shutdown(signal: string): void {
   console.log(`\n${signal} recebido. Encerrando...`);
   server.close(() => process.exit(0));
 }
