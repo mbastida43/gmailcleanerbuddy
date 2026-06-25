@@ -254,7 +254,8 @@ const MAX_ANALYZE = 1000;
 
 interface Offender {
   domain: string;
-  count: number;
+  count: number;       // contagem real (toda a conta) — usada para exibir/ordenar
+  sampleCount: number;  // contagem dentro da amostra analisada — usada só como fallback
   size: number;
   category: string;
 }
@@ -342,9 +343,38 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Respo
     const offenders: Offender[] = Object.keys(senderCounts).map((email) => ({
       domain: email,
       count: senderCounts[email],
+      sampleCount: senderCounts[email],
       size: senderSizes[email] || 0,
       category: senderCategories[email]
     }));
+    offenders.sort((a, b) => b.count - a.count);
+
+    // Contagem REAL para a LISTA INTEIRA: roda a mesma busca `from:"..."` que
+    // o Gmail faz e lê o total da conta inteira (todas as pastas), em vez de
+    // contar só dentro da amostra. É isto que faz o número bater com o filtro
+    // digitado direto no Gmail.
+    //
+    // São ~1 busca por remetente. Para não estourar a quota da API
+    // (rate limit por usuário/segundo), processamos em lotes pequenos com um
+    // respiro entre eles.
+    const CONCURRENCY = 3;
+    const PAUSE_MS = 300;
+    for (let i = 0; i < offenders.length; i += CONCURRENCY) {
+      const batch = offenders.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map(async (item) => {
+        try {
+          item.count = await countMessagesFrom(gmail, item.domain);
+        } catch (err) {
+          if (isAuthError(err)) throw err;
+          // mantém a contagem da amostra como fallback em caso de falha
+        }
+      }));
+      if (i + CONCURRENCY < offenders.length) {
+        await sleep(PAUSE_MS);
+      }
+    }
+
+    // Reordena pelo total real (a amostra pode ter ordenado diferente)
     offenders.sort((a, b) => b.count - a.count);
 
     const responseBody: AnalyzeResponse = {
@@ -382,20 +412,31 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req: Request, res: Respon
   try {
     const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
 
-    // Valor entre aspas impede injeção de operadores de busca do Gmail
+    // Mesma busca usada na contagem (entre aspas, evita injeção de operadores).
+    // Pagina até o fim para coletar TODOS os ids, não só os 200 primeiros.
     const searchQuery = `from:"${sanitizedSender}"`;
-    const response = await gmail.users.messages.list({
-      userId: 'me',
-      q: searchQuery,
-      maxResults: 200
-    });
+    let messageIds: string[] = [];
+    let pageToken: string | undefined;
+    let pages = 0;
+    const MAX_CLEAN_PAGES = 50;
 
-    if (!response.data.messages || response.data.messages.length === 0) {
+    do {
+      const response = await gmail.users.messages.list({
+        userId: 'me',
+        q: searchQuery,
+        maxResults: 500,
+        pageToken,
+        fields: 'messages/id,nextPageToken'
+      });
+      messageIds = messageIds.concat((response.data.messages || []).map((m) => m.id!));
+      pageToken = response.data.nextPageToken ?? undefined;
+      pages++;
+    } while (pageToken && pages < MAX_CLEAN_PAGES);
+
+    if (messageIds.length === 0) {
       res.json({ removed: 0, message: 'Nenhum email encontrado' });
       return;
     }
-
-    const messageIds = response.data.messages.map((m) => m.id!);
 
     // messages.trash move corretamente para a Lixeira (diferente de só
     // adicionar o label TRASH via batchModify, que é incompleto).
@@ -430,6 +471,38 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req: Request, res: Respon
 });
 
 // ========== AUXILIARES ==========
+type Gmail = ReturnType<typeof google.gmail>;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Conta o total real de mensagens de um remetente, igual à busca `from:`
+// digitada no Gmail (varre todas as pastas: caixa, promoções, lixeira, etc.).
+// Pagina até o fim para ser exato — o resultSizeEstimate sozinho é aproximado.
+async function countMessagesFrom(gmail: Gmail, sender: string): Promise<number> {
+  const query = `from:"${sender}"`;
+  let total = 0;
+  let pageToken: string | undefined;
+  let pages = 0;
+  const MAX_COUNT_PAGES = 50; // teto de segurança (50 x 500 = 25.000)
+
+  do {
+    const resp = await gmail.users.messages.list({
+      userId: 'me',
+      q: query,
+      maxResults: 500,
+      pageToken,
+      fields: 'messages/id,nextPageToken'
+    });
+    total += (resp.data.messages || []).length;
+    pageToken = resp.data.nextPageToken ?? undefined;
+    pages++;
+  } while (pageToken && pages < MAX_COUNT_PAGES);
+
+  return total;
+}
+
 function isAuthError(error: any): boolean {
   const status = error?.status || error?.response?.status || error?.code;
   if (status === 401 || status === 403) return true;
