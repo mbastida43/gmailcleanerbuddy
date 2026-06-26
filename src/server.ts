@@ -484,7 +484,10 @@ function sleep(ms: number): Promise<void> {
 // com N respostas aparece como 1 conversa. Usar messages.list retornaria todas
 // as N mensagens e geraria uma discrepância com o que o usuário vê no Gmail.
 async function countMessagesFrom(gmail: Gmail, sender: string): Promise<number> {
-  const query = `from:"${sender}"`;
+  // -in:trash excludes already-trashed messages so the count drops after a
+  // clean operation. includeSpamTrash:true is still needed so the API searches
+  // Spam (which -in:trash does not exclude).
+  const query = `from:"${sender}" -in:trash`;
   let total = 0;
   let pageToken: string | undefined;
   let pages = 0;
