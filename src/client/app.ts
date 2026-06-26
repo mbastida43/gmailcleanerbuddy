@@ -19,6 +19,9 @@ type Lang = 'pt' | 'en' | 'es' | 'fr';
 let currentData: AnalyzeData | null = null;
 let currentLang: Lang = 'pt';
 
+const LANG_FLAG_CLASSES: Record<Lang, string> = { pt: 'fi fi-br', en: 'fi fi-us', es: 'fi fi-es', fr: 'fi fi-fr' };
+const LANG_LABELS: Record<Lang, string> = { pt: 'PT', en: 'EN', es: 'ES', fr: 'FR' };
+
 // ===================== i18n =====================
 const LOCALES: Record<Lang, string> = { pt: 'pt-BR', en: 'en-US', es: 'es-ES', fr: 'fr-FR' };
 
@@ -30,7 +33,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'auth.loginBtn': 'Entrar com Google',
     'auth.note': '🔐 Autenticação OAuth2 oficial do Google<br>🗑️ Permissão para ler e mover seus emails para a lixeira',
     'results.title': '🏆 Top 10 remetentes',
-    'btn.refresh': '🔄 Atualizar',
     'btn.cleanAll': '🗑️ Limpar Top 10',
     'btn.logout': '🚪 Sair',
     'stat.analyzed': 'Emails analisados',
@@ -60,7 +62,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'auth.loginBtn': 'Sign in with Google',
     'auth.note': '🔐 Official Google OAuth2 authentication<br>🗑️ Permission to read and move your emails to the trash',
     'results.title': '🏆 Top 10 senders',
-    'btn.refresh': '🔄 Refresh',
     'btn.cleanAll': '🗑️ Clean Top 10',
     'btn.logout': '🚪 Sign out',
     'stat.analyzed': 'Emails analyzed',
@@ -90,7 +91,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'auth.loginBtn': 'Iniciar sesión con Google',
     'auth.note': '🔐 Autenticación OAuth2 oficial de Google<br>🗑️ Permiso para leer y mover tus correos a la papelera',
     'results.title': '🏆 Top 10 remitentes',
-    'btn.refresh': '🔄 Actualizar',
     'btn.cleanAll': '🗑️ Limpiar Top 10',
     'btn.logout': '🚪 Salir',
     'stat.analyzed': 'Correos analizados',
@@ -120,7 +120,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'auth.loginBtn': 'Se connecter avec Google',
     'auth.note': '🔐 Authentification OAuth2 officielle de Google<br>🗑️ Autorisation de lire et déplacer vos e-mails vers la corbeille',
     'results.title': '🏆 Top 10 des expéditeurs',
-    'btn.refresh': '🔄 Actualiser',
     'btn.cleanAll': '🗑️ Nettoyer le Top 10',
     'btn.logout': '🚪 Se déconnecter',
     'stat.analyzed': 'E-mails analysés',
@@ -160,8 +159,14 @@ function applyLanguage(lang: string): void {
   localStorage.setItem('lang', safeLang);
   document.documentElement.lang = LOCALES[safeLang];
 
-  const select = document.getElementById('langSelect') as HTMLSelectElement | null;
-  if (select) select.value = safeLang;
+  const flagEl = document.getElementById('langFlag');
+  const labelEl = document.getElementById('langLabel');
+  if (flagEl) flagEl.className = LANG_FLAG_CLASSES[safeLang];
+  if (labelEl) labelEl.textContent = LANG_LABELS[safeLang];
+
+  document.querySelectorAll<HTMLElement>('#langMenu [data-lang]').forEach((li) => {
+    li.classList.toggle('active', (li as HTMLElement).dataset['lang'] === safeLang);
+  });
 
   document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
     el.textContent = t(el.getAttribute('data-i18n')!);
@@ -170,7 +175,6 @@ function applyLanguage(lang: string): void {
     el.innerHTML = t(el.getAttribute('data-i18n-html')!);
   });
 
-  // Re-render the list so dynamic strings (e.g. the "Clean" buttons) update too.
   if (currentData) renderResults(currentData);
 }
 
@@ -178,9 +182,25 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('loginButton')?.addEventListener('click', loginGoogle);
   document.getElementById('cleanAllButton')?.addEventListener('click', cleanAll);
   document.getElementById('logoutButton')?.addEventListener('click', logout);
-  document.getElementById('langSelect')?.addEventListener('change', (e) =>
-    applyLanguage((e.target as HTMLSelectElement).value)
-  );
+
+  const langBtn = document.getElementById('langBtn');
+  const langMenu = document.getElementById('langMenu');
+  langBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = langMenu?.classList.toggle('open');
+    langBtn.setAttribute('aria-expanded', String(!!open));
+  });
+  document.addEventListener('click', () => {
+    langMenu?.classList.remove('open');
+    langBtn?.setAttribute('aria-expanded', 'false');
+  });
+  document.querySelectorAll<HTMLElement>('#langMenu [data-lang]').forEach((li) => {
+    li.addEventListener('click', () => {
+      applyLanguage(li.dataset['lang']!);
+      langMenu?.classList.remove('open');
+      langBtn?.setAttribute('aria-expanded', 'false');
+    });
+  });
 
   const saved = localStorage.getItem('lang');
   const browser = (navigator.language || 'pt').slice(0, 2);

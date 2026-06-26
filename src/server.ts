@@ -67,9 +67,9 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:'],
+      imgSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
       connectSrc: ["'self'"],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
@@ -357,8 +357,8 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Respo
     // São ~1 busca por remetente. Para não estourar a quota da API
     // (rate limit por usuário/segundo), processamos em lotes pequenos com um
     // respiro entre eles.
-    const CONCURRENCY = 3;
-    const PAUSE_MS = 300;
+    const CONCURRENCY = 8;
+    const PAUSE_MS = 150;
     for (let i = 0; i < offenders.length; i += CONCURRENCY) {
       const batch = offenders.slice(i, i + CONCURRENCY);
       await Promise.all(batch.map(async (item) => {
