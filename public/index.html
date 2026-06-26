@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css">
 </head>
 <body>
 
@@ -21,12 +22,19 @@
         <div class="subtitle" data-i18n="subtitle">🔐 Conectado ao Gmail via OAuth2</div>
       </div>
     </div>
-    <select id="langSelect" class="lang-select" aria-label="Language / Idioma">
-      <option value="pt">🇧🇷 Português</option>
-      <option value="en">🇺🇸 English</option>
-      <option value="es">🇪🇸 Español</option>
-      <option value="fr">🇫🇷 Français</option>
-    </select>
+    <div class="lang-wrapper" id="langWrapper">
+      <button class="lang-btn" id="langBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span id="langFlag" class="fi fi-br"></span>
+        <span id="langLabel">PT</span>
+        <span class="lang-chevron">▾</span>
+      </button>
+      <ul class="lang-menu" id="langMenu" role="listbox">
+        <li data-lang="pt" role="option"><span class="fi fi-br"></span> Português</li>
+        <li data-lang="en" role="option"><span class="fi fi-us"></span> English</li>
+        <li data-lang="es" role="option"><span class="fi fi-es"></span> Español</li>
+        <li data-lang="fr" role="option"><span class="fi fi-fr"></span> Français</li>
+      </ul>
+    </div>
   </div>
 
   <!-- AUTH -->
