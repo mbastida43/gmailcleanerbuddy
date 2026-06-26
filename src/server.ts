@@ -426,7 +426,8 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req: Request, res: Respon
         q: searchQuery,
         maxResults: 500,
         pageToken,
-        fields: 'messages/id,nextPageToken'
+        fields: 'messages/id,nextPageToken',
+        includeSpamTrash: true
       });
       messageIds = messageIds.concat((response.data.messages || []).map((m) => m.id!));
       pageToken = response.data.nextPageToken ?? undefined;
@@ -477,25 +478,31 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Conta o total real de mensagens de um remetente, igual à busca `from:`
-// digitada no Gmail (varre todas as pastas: caixa, promoções, lixeira, etc.).
-// Pagina até o fim para ser exato — o resultSizeEstimate sozinho é aproximado.
+// Conta o total real de threads (conversas) de um remetente, igual ao número
+// que o Gmail exibe na interface ao pesquisar from:"...". O Gmail sempre
+// apresenta contagens de conversas, nunca de mensagens individuais — um thread
+// com N respostas aparece como 1 conversa. Usar messages.list retornaria todas
+// as N mensagens e geraria uma discrepância com o que o usuário vê no Gmail.
 async function countMessagesFrom(gmail: Gmail, sender: string): Promise<number> {
-  const query = `from:"${sender}"`;
+  // -in:trash excludes already-trashed messages so the count drops after a
+  // clean operation. includeSpamTrash:true is still needed so the API searches
+  // Spam (which -in:trash does not exclude).
+  const query = `from:"${sender}" -in:trash`;
   let total = 0;
   let pageToken: string | undefined;
   let pages = 0;
-  const MAX_COUNT_PAGES = 50; // teto de segurança (50 x 500 = 25.000)
+  const MAX_COUNT_PAGES = 50; // teto de segurança (50 x 500 = 25.000 threads)
 
   do {
-    const resp = await gmail.users.messages.list({
+    const resp = await gmail.users.threads.list({
       userId: 'me',
       q: query,
       maxResults: 500,
       pageToken,
-      fields: 'messages/id,nextPageToken'
+      fields: 'threads/id,nextPageToken',
+      includeSpamTrash: true
     });
-    total += (resp.data.messages || []).length;
+    total += (resp.data.threads || []).length;
     pageToken = resp.data.nextPageToken ?? undefined;
     pages++;
   } while (pageToken && pages < MAX_COUNT_PAGES);
