@@ -478,20 +478,15 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Conta o total real de threads (conversas) de um remetente, igual ao número
-// que o Gmail exibe na interface ao pesquisar from:"...". O Gmail sempre
-// apresenta contagens de conversas, nunca de mensagens individuais — um thread
-// com N respostas aparece como 1 conversa. Usar messages.list retornaria todas
-// as N mensagens e geraria uma discrepância com o que o usuário vê no Gmail.
+// Conta threads exatas via paginação — mesma semântica do Gmail UI (conversas,
+// não mensagens individuais). Spam e Lixeira são excluídos pelo padrão da API,
+// assim como o Gmail exclui do total exibido quando ambos estão limpos.
 async function countMessagesFrom(gmail: Gmail, sender: string): Promise<number> {
-  // -in:trash excludes already-trashed messages so the count drops after a
-  // clean operation. includeSpamTrash:true is still needed so the API searches
-  // Spam (which -in:trash does not exclude).
-  const query = `from:"${sender}" -in:trash`;
+  const query = `from:"${sender}"`;
   let total = 0;
   let pageToken: string | undefined;
   let pages = 0;
-  const MAX_COUNT_PAGES = 50; // teto de segurança (50 x 500 = 25.000 threads)
+  const MAX_COUNT_PAGES = 50;
 
   do {
     const resp = await gmail.users.threads.list({
@@ -499,8 +494,7 @@ async function countMessagesFrom(gmail: Gmail, sender: string): Promise<number> 
       q: query,
       maxResults: 500,
       pageToken,
-      fields: 'threads/id,nextPageToken',
-      includeSpamTrash: true
+      fields: 'threads/id,nextPageToken'
     });
     total += (resp.data.threads || []).length;
     pageToken = resp.data.nextPageToken ?? undefined;
