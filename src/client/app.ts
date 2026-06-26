@@ -176,7 +176,6 @@ function applyLanguage(lang: string): void {
 
 window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('loginButton')?.addEventListener('click', loginGoogle);
-  document.getElementById('refreshButton')?.addEventListener('click', refreshAnalysis);
   document.getElementById('cleanAllButton')?.addEventListener('click', cleanAll);
   document.getElementById('logoutButton')?.addEventListener('click', logout);
   document.getElementById('langSelect')?.addEventListener('change', (e) =>
