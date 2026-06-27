@@ -31,6 +31,13 @@ Aplicação em fase de testes.
 - Conta do Google (Gmail)
 - Google Cloud Console configurado
 
+## ▶️ Instale e execute
+
+```bash
+npm install # Instala as dependências do projeto
+npm start   # Inicia a aplicação
+# ou: npm run dev (recarrega ao salvar)
+```
 
 ---
 
