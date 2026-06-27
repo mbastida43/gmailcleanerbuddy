@@ -13,8 +13,9 @@ Application in testing phase.
 ## ▶️ Install and run
 
 ```bash
-npm install
-npm start        # or: npm run dev  (reloads when saving)
+npm install # Install project dependencies
+npm start # Start the application
+# or: npm run dev (reloads on save)
 ```
 
 Open http://localhost:3000, click Sign in with Google, authorize access, and the Top 10 senders will appear with the Clean button to move emails to the trash.
@@ -63,6 +64,8 @@ Aplicación en fase de pruebas.
 ```bash
 npm install
 npm start        # o: npm run dev  (recarga al guardar)
+npm install # Instala las dependencias del proyecto
+# o: npm run dev (se recarga al guardar)
 ```
 
 Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el acceso, y los 10 principales remitentes aparecerán con el botón Limpiar para mover los correos electrónicos a la papelera.
@@ -86,9 +89,11 @@ Application en phase de test.
 
 ## ▶️ Installer et exécuter
 
+
 ```bash
-npm install
-npm start        # ou : npm run dev  (recharge lors de l’enregistrement)
+npm install # Installe les dépendances du projet
+npm start # Démarre l'application
+# ou : npm run dev (recharge lors de l'enregistrement)
 ```
 
 Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l’accès, et les 10 principaux expéditeurs apparaîtront avec le bouton Nettoyer pour déplacer les e-mails vers la corbeille.
