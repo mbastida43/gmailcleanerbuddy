@@ -305,8 +305,9 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Respo
     async function fetchMessagePage(token: string | undefined) {
       return gmail.users.messages.list({
         userId: 'me',
-        maxResults: 100,
-        pageToken: token
+        maxResults: 500,
+        pageToken: token,
+        fields: 'messages/id,nextPageToken'
       });
     }
 
@@ -378,18 +379,20 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Respo
     }));
     offenders.sort((a, b) => b.count - a.count);
 
-    // Contagem REAL para a LISTA INTEIRA: roda a mesma busca `from:"..."` que
-    // o Gmail faz e lê o total da conta inteira (todas as pastas), em vez de
-    // contar só dentro da amostra. É isto que faz o número bater com o filtro
+    // Contagem REAL via a mesma busca `from:"..."` que o Gmail faz, lendo o
+    // total da conta inteira — é isto que faz o número bater com o filtro
     // digitado direto no Gmail.
     //
-    // São ~1 busca por remetente. Para não estourar a quota da API
-    // (rate limit por usuário/segundo), processamos em lotes pequenos com um
-    // respiro entre eles.
+    // Só para os TOP candidatos da amostra: contar todos os remetentes únicos
+    // (podem ser centenas) custava dezenas de segundos e a tela só exibe os
+    // maiores. 25 dá folga para o reordenamento pós-contagem; o resto mantém
+    // a contagem da amostra em `sampleCount`.
+    const EXACT_COUNT_LIMIT = 25;
+    const toCount = offenders.slice(0, EXACT_COUNT_LIMIT);
     const CONCURRENCY = 8;
     const PAUSE_MS = 150;
-    for (let i = 0; i < offenders.length; i += CONCURRENCY) {
-      const batch = offenders.slice(i, i + CONCURRENCY);
+    for (let i = 0; i < toCount.length; i += CONCURRENCY) {
+      const batch = toCount.slice(i, i + CONCURRENCY);
       await Promise.all(batch.map(async (item) => {
         try {
           item.count = await countMessagesFrom(gmail, item.domain);
@@ -398,7 +401,7 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Respo
           // mantém a contagem da amostra como fallback em caso de falha
         }
       }));
-      if (i + CONCURRENCY < offenders.length) {
+      if (i + CONCURRENCY < toCount.length) {
         await sleep(PAUSE_MS);
       }
     }
