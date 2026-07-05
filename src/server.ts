@@ -77,8 +77,19 @@ app.use(helmet({
       formAction: ["'self'"]
     }
   },
-  hsts: isProd
+  hsts: isProd,
+  referrerPolicy: { policy: 'no-referrer' }
 }));
+
+// Permissions-Policy: desabilita APIs de navegador que este app não usa,
+// reduzindo a superfície de ataque caso um XSS futuro tente acessá-las.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()'
+  );
+  next();
+});
 
 app.use(express.json({ limit: '10kb' }));
 app.use(express.static('public'));
@@ -91,7 +102,7 @@ app.use(session({
   cookie: {
     secure: isProd,
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
@@ -150,10 +161,15 @@ app.get('/auth/google', authLimiter, (req: Request, res: Response) => {
   const state = crypto.randomBytes(32).toString('hex');
   req.session.oauthState = state;
 
+  // Minimização de credenciais (segurança): pedimos acesso 'online', então o
+  // Google emite APENAS um access token de curta duração (~1h) e NENHUM refresh
+  // token. Como o app nunca usa refresh token, não faz sentido guardar uma
+  // credencial de longa duração — se a store de sessão vazar, o dano expira em
+  // ~1h em vez de ser renovável indefinidamente. A sessão expira naturalmente e
+  // o usuário reautentica.
   const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
+    access_type: 'online',
     scope: ['https://www.googleapis.com/auth/gmail.modify'],
-    prompt: 'consent',
     state
   });
 
