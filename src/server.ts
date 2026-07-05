@@ -471,27 +471,47 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req: Request, res: Respon
       return;
     }
 
-    // messages.trash move corretamente para a Lixeira (diferente de só
-    // adicionar o label TRASH via batchModify, que é incompleto).
-    // Em paralelo por lotes: trash custa 5 unidades de quota e o limite é
-    // ~250 unidades/s por usuário, então ~40 chamadas/s fica dentro da cota.
+    // batchModify aplica TRASH em até 1000 mensagens numa única chamada
+    // (50 unidades de quota), em vez de 1 chamada por mensagem. Remover
+    // INBOX explicitamente evita o efeito "incompleto" observado no passado
+    // com addLabelIds sozinho (mensagens seguiam aparecendo em buscas da
+    // caixa de entrada). Se o lote falhar, cai no plano B: messages.trash
+    // individual em paralelo controlado.
     let removed = 0;
     let failed = 0;
-    const TRASH_CONCURRENCY = 10;
-    const TRASH_PAUSE_MS = 120;
-    for (let i = 0; i < messageIds.length; i += TRASH_CONCURRENCY) {
-      const batch = messageIds.slice(i, i + TRASH_CONCURRENCY);
-      await Promise.all(batch.map(async (id) => {
-        try {
-          await gmail.users.messages.trash({ userId: 'me', id });
-          removed++;
-        } catch (err) {
-          if (isAuthError(err)) throw err;
-          failed++;
+    const BATCH_MODIFY_MAX = 1000;
+    for (let i = 0; i < messageIds.length; i += BATCH_MODIFY_MAX) {
+      const chunk = messageIds.slice(i, i + BATCH_MODIFY_MAX);
+      try {
+        await gmail.users.messages.batchModify({
+          userId: 'me',
+          requestBody: {
+            ids: chunk,
+            addLabelIds: ['TRASH'],
+            removeLabelIds: ['INBOX']
+          }
+        });
+        removed += chunk.length;
+      } catch (err) {
+        if (isAuthError(err)) throw err;
+        // Plano B: individual, em lotes paralelos pequenos
+        const TRASH_CONCURRENCY = 10;
+        const TRASH_PAUSE_MS = 120;
+        for (let j = 0; j < chunk.length; j += TRASH_CONCURRENCY) {
+          const batch = chunk.slice(j, j + TRASH_CONCURRENCY);
+          await Promise.all(batch.map(async (id) => {
+            try {
+              await gmail.users.messages.trash({ userId: 'me', id });
+              removed++;
+            } catch (innerErr) {
+              if (isAuthError(innerErr)) throw innerErr;
+              failed++;
+            }
+          }));
+          if (j + TRASH_CONCURRENCY < chunk.length) {
+            await sleep(TRASH_PAUSE_MS);
+          }
         }
-      }));
-      if (i + TRASH_CONCURRENCY < messageIds.length) {
-        await sleep(TRASH_PAUSE_MS);
       }
     }
 

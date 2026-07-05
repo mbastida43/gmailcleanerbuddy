@@ -310,6 +310,18 @@ async function refreshAnalysis(): Promise<void> {
   }
 }
 
+// Atualização otimista: remove o remetente limpo da lista local e re-renderiza
+// na hora, sem pagar os ~25s de uma nova análise completa. O 11º colocado sobe
+// para o Top 10 (o servidor conta com exatidão os 25 primeiros justamente para
+// isso). Um F5 refaz a análise completa quando o usuário quiser re-verificar.
+function removeSenderLocally(sender: string): void {
+  if (!currentData) return;
+  currentData.offenders = currentData.offenders.filter((o) => o.domain !== sender);
+  currentData.top10 = currentData.offenders.slice(0, 10);
+  currentData.uniqueSenders = currentData.offenders.length;
+  renderResults(currentData);
+}
+
 function renderResults(data: AnalyzeData): void {
   document.getElementById('totalEmails')!.textContent = formatNumber(data.totalMessages);
   document.getElementById('totalSize')!.textContent = formatSize(data.offenders.reduce((s, o) => s + o.size, 0));
@@ -375,7 +387,7 @@ async function cleanSender(sender: string): Promise<void> {
     }
     const data = await res.json();
     toast(t('toast.cleaned', { n: data.removed }));
-    await refreshAnalysis();
+    removeSenderLocally(sender);
   } catch (error: any) {
     if (error?.message !== 'unauthorized') {
       console.error('Erro ao limpar:', error);
@@ -394,7 +406,9 @@ async function cleanAll(): Promise<void> {
   let totalRemoved = 0;
   let totalFailed = 0;
 
-  for (const item of currentData.top10) {
+  // Cópia da lista: removeSenderLocally mexe no top10 durante o loop
+  const targets = [...currentData.top10];
+  for (const item of targets) {
     try {
       const res = await apiFetch('/api/clean', {
         method: 'POST',
@@ -405,6 +419,7 @@ async function cleanAll(): Promise<void> {
         const data = await res.json();
         totalRemoved += data.removed || 0;
         totalFailed += data.failed || 0;
+        removeSenderLocally(item.domain);
       } else {
         totalFailed++;
       }
@@ -419,7 +434,6 @@ async function cleanAll(): Promise<void> {
   } else {
     toast(t('toast.cleaned', { n: totalRemoved }));
   }
-  await refreshAnalysis();
   hideLoading();
 }
 
