@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Segredos — nunca commitar
 .env
 .env.*
@@ -8,3 +9,32 @@ node_modules/
 
 # Logs
 *.log
+=======
+# Dependências
+node_modules/
+
+# Segredos e ambiente — NUNCA versionar
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Logs
+npm-debug.log*
+*.log
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Arquivos históricos
+*.old
+
+# Build TypeScript (gerado a partir de src/)
+/dist/
+/public/app.js
+/public/app.js.map
+>>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30
