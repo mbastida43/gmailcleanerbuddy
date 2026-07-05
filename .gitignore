@@ -1,22 +1,10 @@
-<<<<<<< HEAD
-# Segredos — nunca commitar
-.env
-.env.*
-!.env.example
-
-# Dependências
-node_modules/
-
-# Logs
-*.log
-=======
 # Dependências
 node_modules/
 
 # Segredos e ambiente — NUNCA versionar
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 *.pem
 *.key
 
@@ -37,4 +25,3 @@ Thumbs.db
 /dist/
 /public/app.js
 /public/app.js.map
->>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30

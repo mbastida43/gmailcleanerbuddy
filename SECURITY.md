@@ -94,17 +94,11 @@ repositório. Não divulgue publicamente antes da correção.
   (`googleapis.com`), com URLs fixas do SDK oficial; nenhuma URL é construída
   a partir de entrada do usuário.
 
-<<<<<<< HEAD
-### CSRF (defesa em profundidade)
-- `sameSite=lax` nos cookies + verificação de cabeçalho `Origin` nas rotas
-  que mudam estado (`/api/clean`, `/auth/logout`).
-=======
 ### CSRF
 - O pacote `csurf` foi **removido** (arquivado/deprecado pelos mantenedores).
   A proteção agora é o middleware global `verifySameOrigin`: todo método que
   altera estado (POST/PUT/PATCH/DELETE) precisa de cabeçalho `Origin`/`Referer`
   pertencente ao próprio host, somado a `sameSite=lax` nos cookies.
->>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30
 
 ---
 
