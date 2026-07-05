@@ -113,7 +113,10 @@ app.use(session({
     // de accounts.google.com — com 'strict' o navegador omite o cookie e o
     // state salvo na sessão se perde. CSRF segue coberto pelo verifySameOrigin.
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    // 1h, alinhado à vida do access token do Google (acesso 'online', sem
+    // refresh token): cookie mais longo só ampliaria a janela de exposição
+    // em máquina compartilhada sem ganho de usabilidade.
+    maxAge: 60 * 60 * 1000
   }
 }));
 
@@ -279,7 +282,7 @@ app.get('/api/user', apiLimiter, requireAuth, async (req: Request, res: Response
 });
 
 // 6. Analisar caixa de entrada (Top Offenders)
-const MAX_ANALYZE = 1000;
+const MAX_ANALYZE = 500;
 
 interface Offender {
   domain: string;
