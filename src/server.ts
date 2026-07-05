@@ -470,15 +470,25 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req: Request, res: Respon
 
     // messages.trash move corretamente para a Lixeira (diferente de só
     // adicionar o label TRASH via batchModify, que é incompleto).
+    // Em paralelo por lotes: trash custa 5 unidades de quota e o limite é
+    // ~250 unidades/s por usuário, então ~40 chamadas/s fica dentro da cota.
     let removed = 0;
     let failed = 0;
-    for (const id of messageIds) {
-      try {
-        await gmail.users.messages.trash({ userId: 'me', id });
-        removed++;
-      } catch (err) {
-        if (isAuthError(err)) throw err;
-        failed++;
+    const TRASH_CONCURRENCY = 10;
+    const TRASH_PAUSE_MS = 120;
+    for (let i = 0; i < messageIds.length; i += TRASH_CONCURRENCY) {
+      const batch = messageIds.slice(i, i + TRASH_CONCURRENCY);
+      await Promise.all(batch.map(async (id) => {
+        try {
+          await gmail.users.messages.trash({ userId: 'me', id });
+          removed++;
+        } catch (err) {
+          if (isAuthError(err)) throw err;
+          failed++;
+        }
+      }));
+      if (i + TRASH_CONCURRENCY < messageIds.length) {
+        await sleep(TRASH_PAUSE_MS);
       }
     }
 
