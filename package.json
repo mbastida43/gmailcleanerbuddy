@@ -4,6 +4,15 @@
   "description": "Gmail Cleaner Buddy com OAuth2 e Gmail API",
   "main": "dist/server.js",
   "scripts": {
+<<<<<<< HEAD
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "audit": "npm audit --audit-level=moderate"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+=======
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.json",
     "build:client": "tsc -p tsconfig.client.json",
@@ -15,13 +24,18 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "audit": "npm audit --omit=dev"
   },
+>>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30
   "keywords": [
     "gmail",
     "cleaner",
     "oauth2",
     "google-api"
   ],
+<<<<<<< HEAD
+  "author": "Seu Nome",
+=======
   "author": "Marlon Bastida",
+>>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30
   "license": "MIT",
   "engines": {
     "node": ">=18"
@@ -29,10 +43,17 @@
   "dependencies": {
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+<<<<<<< HEAD
+    "express-rate-limit": "^8.5.2",
+    "express-session": "^1.17.3",
+    "googleapis": "^173.0.0",
+    "helmet": "^8.2.0"
+=======
     "express-rate-limit": "^6.8.0",
     "express-session": "^1.17.3",
     "googleapis": "^173.0.0",
     "helmet": "^6.0.0"
+>>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30
   },
   "devDependencies": {
     "@types/express": "4.17.25",
