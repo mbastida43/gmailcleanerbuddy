@@ -49,14 +49,14 @@ function createOAuthClient(): OAuth2Client {
 // ========== RATE LIMITING (OWASP A04) ==========
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  limit: 100,
   standardHeaders: true,
   legacyHeaders: false
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  limit: 10,
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -94,6 +94,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(express.json({ limit: '10kb' }));
 app.use(express.static('public'));
 
+// Respostas de auth/API carregam dados sensíveis (perfil, contagens) e não
+// devem ficar em cache de navegador nem de proxies intermediários.
+app.use(['/api', '/auth'], (req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
 app.use(session({
   name: 'gcb.sid',
   secret: process.env.SESSION_SECRET!,
@@ -102,7 +109,10 @@ app.use(session({
   cookie: {
     secure: isProd,
     httpOnly: true,
-    sameSite: 'strict',
+    // 'lax' (não 'strict'): o retorno do OAuth é uma navegação top-level vinda
+    // de accounts.google.com — com 'strict' o navegador omite o cookie e o
+    // state salvo na sessão se perde. CSRF segue coberto pelo verifySameOrigin.
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
@@ -189,6 +199,9 @@ app.get('/auth/google/callback', authLimiter, async (req: Request, res: Response
     crypto.timingSafeEqual(Buffer.from(state), Buffer.from(expectedState));
 
   if (!code || typeof code !== 'string' || !stateOk) {
+    console.error(
+      `OAuth callback rejeitado: code=${!!code} stateRecebido=${typeof state === 'string'} stateNaSessao=${typeof expectedState === 'string'}`
+    );
     res.redirect('/?error=auth_state_mismatch');
     return;
   }
@@ -221,7 +234,7 @@ app.get('/auth/google/callback', authLimiter, async (req: Request, res: Response
 });
 
 // 3. Status (sem expor detalhes internos)
-app.get('/auth/status', (req: Request, res: Response) => {
+app.get('/auth/status', apiLimiter, (req: Request, res: Response) => {
   res.json({ authenticated: !!req.session.tokens });
 });
 
@@ -551,7 +564,16 @@ app.use((req: Request, res: Response) => {
 });
 
 // Handler de erro genérico (não vaza detalhes ao cliente)
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error & { type?: string }, req: Request, res: Response, next: NextFunction) => {
+  // Erros do body-parser são culpa do cliente, não do servidor
+  if (err.type === 'entity.too.large') {
+    res.status(413).json({ error: 'Corpo da requisição grande demais' });
+    return;
+  }
+  if (err.type === 'entity.parse.failed') {
+    res.status(400).json({ error: 'JSON inválido' });
+    return;
+  }
   console.error('Erro interno no servidor:', err.message);
   res.status(500).json({ error: 'Erro interno no servidor' });
 });

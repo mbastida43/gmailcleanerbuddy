@@ -125,14 +125,29 @@ repositório. Não divulgue publicamente antes da correção.
   do Gmail, abuso de quota.
 - **Design / Security Requirements**: requisitos verificados na inicialização
   (segredos obrigatórios e fortes).
-- **Implementation / Secure Build**: `npm run audit` deve rodar no CI;
-  dependências travadas por lockfile.
+- **Implementation / Secure Build**: CI no GitHub Actions
+  (`.github/workflows/security.yml`) roda typecheck + `npm audit` (SCA) em
+  todo push/PR para `main`; dependências travadas por lockfile.
 - **Verification / Security Testing**: revisar `npm audit` a cada mudança de
   dependência; testar manualmente fluxos de auth (state inválido, sessão
   expirada, sender malformado).
 - **Operations / Environment Management**: segredos só no ambiente; rotação
   do `SESSION_SECRET` e das credenciais OAuth em caso de suspeita de
   vazamento (revogar no Google Cloud Console).
+
+---
+
+## Endurecimentos de 2026-07-05 (playbook SaaS)
+
+- **`Cache-Control: no-store`** em todas as respostas de `/api/*` e
+  `/auth/*` — dados sensíveis (perfil, contagens, redirects de auth) não
+  ficam em cache de navegador nem de proxies.
+- **Rate limit em `/auth/status`** — era a única rota dinâmica sem limiter.
+- **Erros de body-parser mapeados para 4xx** — JSON inválido responde 400 e
+  payload acima de 10kb responde 413, em vez de cair no handler 500 e
+  poluir o log com erro de cliente.
+- **CI de segurança** — workflow `security.yml` com typecheck e
+  `npm audit --omit=dev` em cada push/PR.
 
 ---
 
