@@ -1,16 +1,8 @@
-
-<<<<<<< HEAD
-Conecte qualquer conta Gmail via OAuth2 (o mesmo seletor de contas do Google
-que aparece ao abrir gmail.com), veja os Top 10 remetentes que mais ocupam
-sua caixa e mova os emails deles para a lixeira.
-
-## 📋 Pré-requisitos
-
-- Node.js 18+ instalado
-- Conta Google (Gmail)
-- Google Cloud Console configurado
-=======
 # 🚀 Gmail Cleaner Buddy — OAuth2 Configuration
+
+Connect any Gmail account via OAuth2 (the same Google account picker that
+appears when you open gmail.com), see the Top 10 senders taking up the most
+space in your inbox, and move their emails to the trash.
 
 ## 📋 Prerequisites
 
@@ -30,15 +22,18 @@ npm start # Start the application
 ```
 
 Open http://localhost:3000, click Sign in with Google, authorize access, and the Top 10 senders will appear with the Clean button to move emails to the trash.
->>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30
 
 ---
 
 # 🚀 Gmail Cleaner Buddy — Configuração OAuth2
-## 📋 Requisitos prévios
+
+Conecte qualquer conta Gmail via OAuth2 (o mesmo seletor de contas do Google
+que aparece ao abrir gmail.com), veja os Top 10 remetentes que mais ocupam
+sua caixa e mova os emails deles para a lixeira.
+
+## 📋 Pré-requisitos
 
 Aplicação em fase de testes.
-
 
 - Node.js 18+ instalado
 - Conta do Google (Gmail)
@@ -52,9 +47,7 @@ npm start   # Inicia a aplicação
 # ou: npm run dev (recarrega ao salvar)
 ```
 
----
-
-Abrir http://localhost:3000, clique em Iniciar sessão com o Google, autorize o acesso, e os 10 principais remetentes apareceção com o botão Limpar para mover os emails para a lixeira.
+Abra http://localhost:3000, clique em Iniciar sessão com o Google, autorize o acesso, e os 10 principais remetentes aparecerão com o botão Limpar para mover os emails para a lixeira.
 
 ---
 
@@ -68,15 +61,11 @@ Aplicación en fase de pruebas.
 - Cuenta de Google (Gmail)
 - Google Cloud Console configurado
 
-
----
-
 ## ▶️ Instalar y ejecutar
 
 ```bash
-npm install
-npm start        # o: npm run dev  (recarga al guardar)
 npm install # Instala las dependencias del proyecto
+npm start   # Inicia la aplicación
 # o: npm run dev (se recarga al guardar)
 ```
 
@@ -84,10 +73,8 @@ Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el 
 
 ---
 
-
-
-
 # 🚀 Gmail Cleaner Buddy — Configuration OAuth2
+
 ## 📋 Prérequis
 
 Application en phase de test.
@@ -96,11 +83,7 @@ Application en phase de test.
 - Compte Google (Gmail)
 - Google Cloud Console configuré
 
-
----
-
 ## ▶️ Installer et exécuter
-
 
 ```bash
 npm install # Installe les dépendances du projet
@@ -112,8 +95,20 @@ Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l�
 
 ---
 
+# ⚙️ Guia detalhado de configuração (Português)
 
-<<<<<<< HEAD
+## 🔧 Passo 1: Configurar o Google Cloud Console
+
+### 1.1 Criar o projeto
+
+1. Acesse https://console.cloud.google.com
+2. Crie um novo projeto (ex.: `Gmail Cleaner Buddy`)
+
+### 1.2 Ativar a Gmail API
+
+1. **APIs e Serviços** → **Biblioteca**
+2. Busque por **Gmail API** e clique em **Ativar**
+
 ### 1.3 Configurar a Tela de Consentimento
 
 1. **APIs e Serviços** → **Tela de consentimento OAuth**
@@ -204,6 +199,3 @@ ofensores aparecem com o botão **Limpar** para mover os emails à lixeira.
 
 As práticas de segurança (OWASP Top 10, Twelve-Factor, OWASP SAMM) estão
 documentadas em [SECURITY.md](SECURITY.md).
-=======
-
->>>>>>> 04e8b443d5362eb424b6e9e05f799fd56736bc30
