@@ -187,6 +187,22 @@ h1{font-size:34px;font-weight:900;}
   .offender{grid-template-columns:40px 1fr 100px 70px;}
 }
 
+@media(max-width:480px){
+  .auth .btn{width:100%;justify-content:center;}
+
+  .offender{
+    grid-template-columns:40px 1fr auto;
+    grid-template-areas:
+      "rank info info"
+      "rank count btn";
+    row-gap:8px;
+  }
+  .offender .rank{grid-area:rank;}
+  .offender > div:nth-child(2){grid-area:info;}
+  .count{grid-area:count;text-align:left;}
+  .btn-clean-single{grid-area:btn;justify-self:end;}
+}
+
 @media (prefers-reduced-motion: reduce){
   *{animation:none !important;transition:none !important;}
 }
