@@ -1,3 +1,210 @@
+# Security Policy and Model — Gmail Cleaner Buddy
+
+This document describes the application's security practices, following
+**OWASP Top 10 (2021)**, **OWASP SAMM**, and the **Twelve-Factor App**
+methodology.
+
+## Reporting vulnerabilities
+
+Found a vulnerability? Open a private issue (security advisory) in the
+repository. Do not disclose publicly before a fix is available.
+
+---
+
+## Mitigations by category — OWASP Top 10 (2021)
+
+### A01 — Broken Access Control
+- **Per-request OAuth2 client**: the OAuth2 client is never shared globally.
+  Previously, a single global client received `setCredentials()` from any
+  session, which allowed concurrent requests from one user to use another
+  user's tokens. Now each authenticated request creates its own client from
+  its own session's tokens (`createOAuthClient`).
+- **Least privilege**: only the `gmail.modify` scope is requested (it already
+  includes reading; the redundant `gmail.readonly` scope was removed).
+- All `/api/*` routes require an authenticated session (`requireAuth`).
+
+### A02 — Cryptographic Failures
+- `SESSION_SECRET` is mandatory, with a minimum of 32 characters; the
+  application **does not start** with a missing or weak secret (no hardcoded
+  fallback).
+- Session cookies: `httpOnly`, `secure` (in production), `sameSite=lax`.
+- OAuth `state` comparison with `crypto.timingSafeEqual` (resistant to timing
+  attacks).
+- HSTS enabled via Helmet in production.
+
+### A03 — Injection
+- The `sender` parameter of `/api/clean` is validated against a strict email
+  address pattern (no spaces, quotes, parentheses, or wildcards) before being
+  interpolated into the Gmail search query, and the search uses a quoted value
+  (`from:"..."`). This prevents injection of Gmail search operators that could
+  delete arbitrary emails.
+- **XSS**: all content derived from emails (the `From` header, controllable by
+  an external attacker) is rendered via `textContent`/`createElement`, never
+  via `innerHTML` or inline handlers. The old `onclick="cleanSender('${...}')"`
+  was vulnerable to stored XSS via single quotes in the `From` header.
+- Restrictive Content-Security-Policy (no external scripts, `object-src 'none'`,
+  `frame-ancestors 'none'`).
+
+### A04 — Insecure Design
+- **Rate limiting**: 100 req/15min on `/api/*` and 10 req/15min on `/auth/*`
+  (mitigates brute force and abuse of the Gmail API quota).
+- JSON body size limit (10 KB).
+- Limited pagination on analysis (max 50 pages) to avoid resource exhaustion.
+
+### A05 — Security Misconfiguration
+- **Helmet**: CSP, `X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, removal of the `X-Powered-By` header, HSTS.
+- Generic error messages to the client; details (`error.message`, stack
+  traces) stay only in the server logs.
+- `trust proxy` configured only in production, so `secure` cookies work behind
+  a load balancer.
+- Custom session cookie name (`gcb.sid`), without revealing the framework.
+
+### A06 — Vulnerable and Outdated Components
+- `googleapis` updated (fixes advisory GHSA-w5hq-g745-h8pq in the transitive
+  `uuid`); `npm audit` with no known vulnerabilities.
+- `npm run audit` script added; run it regularly and in CI.
+- `engines.node >= 18` declared.
+
+### A07 — Identification and Authentication Failures
+- **OAuth `state` anti-CSRF** (RFC 6749 §10.12): a random 32-byte value
+  generated per request, stored in the session and validated on the callback.
+  Without it, an attacker could forge the callback and log the victim into the
+  attacker's account (login CSRF).
+- **Session regeneration after login** (prevents session fixation).
+- `saveUninitialized: false` — no session cookie is issued before login.
+- **Complete logout**: revokes the token at Google (`revokeToken`), destroys
+  the session, and clears the cookie.
+- `/auth/status` no longer exposes internal details (`hasTokens`).
+
+### A08 — Software and Data Integrity Failures
+- No third-party scripts on the front end (only Google Fonts via CSS,
+  restricted by the CSP).
+- Dependencies pinned via `package-lock.json` (Twelve-Factor: II.
+  Dependencies).
+
+### A09 — Security Logging and Monitoring Failures
+- Logs written to stdout/stderr (Twelve-Factor: XI. Logs) for collection by
+  the runtime environment.
+- Errors logged with context on the server, without leaking to the client.
+- Tokens and secrets are **never** logged.
+
+### A10 — Server-Side Request Forgery (SSRF)
+- The server only makes outbound calls to the Gmail API (`googleapis.com`),
+  with fixed URLs from the official SDK; no URL is built from user input.
+
+### CSRF
+- The `csurf` package was **removed** (archived/deprecated by its
+  maintainers). Protection is now the global `verifySameOrigin` middleware:
+  every state-changing method (POST/PUT/PATCH/DELETE) requires an
+  `Origin`/`Referer` header belonging to the host itself, combined with
+  `sameSite=lax` on the cookies.
+
+---
+
+## Twelve-Factor App
+
+| Factor | Implementation |
+|---|---|
+| I. Codebase | Single git repository |
+| II. Dependencies | Declared in `package.json` + `package-lock.json` |
+| III. Config | 100% via environment variables; `.env.example` versioned, `.env` in `.gitignore`; fails fast if mandatory config is missing |
+| VII. Port binding | Port via `PORT` |
+| IX. Disposability | Graceful shutdown on `SIGTERM`/`SIGINT` |
+| X. Dev/prod parity | Same code; differences controlled only by `NODE_ENV` |
+| XI. Logs | Event stream to stdout/stderr, no log files |
+
+---
+
+## OWASP SAMM — practices adopted
+
+- **Governance / Policy & Compliance**: this document defines the security
+  policy and the reporting process.
+- **Design / Threat Assessment**: main threats mapped — OAuth token theft,
+  login CSRF, XSS via email headers, injection in the Gmail search, quota
+  abuse.
+- **Design / Security Requirements**: requirements verified at startup
+  (mandatory and strong secrets).
+- **Implementation / Secure Build**: CI on GitHub Actions
+  (`.github/workflows/security.yml`) runs typecheck + `npm audit` (SCA) on
+  every push/PR to `main`; dependencies locked by lockfile.
+- **Verification / Security Testing**: review `npm audit` on every dependency
+  change; manually test auth flows (invalid state, expired session, malformed
+  sender).
+- **Operations / Environment Management**: secrets only in the environment;
+  rotate `SESSION_SECRET` and the OAuth credentials in case of a suspected
+  leak (revoke in the Google Cloud Console).
+
+---
+
+## Hardening of 2026-07-05 (SaaS playbook)
+
+- **`Cache-Control: no-store`** on all `/api/*` and `/auth/*` responses —
+  sensitive data (profile, counts, auth redirects) is not cached in the
+  browser or by proxies.
+- **Rate limit on `/auth/status`** — it was the only dynamic route without a
+  limiter.
+- **Body-parser errors mapped to 4xx** — invalid JSON responds 400 and a
+  payload over 10kb responds 413, instead of falling into the 500 handler and
+  polluting the log with a client error.
+- **Security CI** — `security.yml` workflow with typecheck and
+  `npm audit --omit=dev` on every push/PR.
+
+---
+
+## Known limitations / next steps
+
+1. **In-memory session storage**: `express-session` uses MemoryStore by
+   default, which is not recommended for production (leaks memory and does not
+   scale horizontally — Twelve-Factor: VI. Processes). For production,
+   configure an external store (e.g., `connect-redis`).
+2. **CSP with `'unsafe-inline'` for styles**: the CSS is inline in the HTML.
+   Migrating to an external file would allow removing this exception.
+3. **Refresh token in the session**: tokens live only in the session (expire
+   in 24h). If the application evolves toward persistence, encrypt the tokens
+   at rest.
+
+---
+
+## Findings from the code review of 2026-06-10 — ALL FIXED
+
+Findings confirmed by the high-effort review and the fixes applied:
+
+1. ✅ **`cleanAll()` swallowed failures silently** — now uses `apiFetch`
+   (handles 401), counts successes/failures per sender, and the toast reports
+   the real result (`⚠️ X moved; Y failed` when there are failures).
+2. ✅ **`isAuthError()` did not recognize all forms of revoked token** — now
+   covers `error.status`, `error.response.status`, numeric `error.code`, the
+   OAuth code in `error.response.data.error`, and Google's "expired or revoked"
+   message.
+3. ✅ **Quota errors swallowed in analysis** — auth errors within the batch now
+   propagate to the 401; the rest are counted in `failedMessages`, returned in
+   the response, and displayed by the front end ("Partial analysis").
+4. ✅ **Non-email senders broke the Clean button** — the analysis now
+   normalizes (trim/lowercase) and aggregates only senders that pass the same
+   validation as `/api/clean`; rows impossible to clean do not appear.
+5. ✅ **Misleading statistics / wasted calls** — pagination stops when reaching
+   the analysis limit (1000); `totalMessages` now matches the set actually
+   analyzed and the response includes `analyzedMessages`/`failedMessages`.
+6. ✅ **Per-route Origin opt-in** — `verifySameOrigin` became global middleware
+   for all unsafe methods (POST/PUT/PATCH/DELETE); future mutating routes are
+   protected automatically.
+7. ✅ **Outdated playbooks at the root** — `index2.html` renamed to
+   `index.html.old` and `INTRUÇÕES.md` received a prominent historical-document
+   warning ("do not use this code").
+
+### State of the npm modules (`node_modules` folder)
+
+- `npm audit`: **0 known vulnerabilities** (after upgrading `googleapis`
+  128→173, which fixed the GHSA-w5hq-g745-h8pq advisory of the transitive
+  `uuid`).
+- `node_modules/` was **removed from versioning** (it was committed on `main`):
+  dependencies are reproducibly installable via `npm ci` + `package-lock.json`.
+  Never recommit the folder.
+- Run `npm run audit` in CI and on every dependency change.
+
+---
+
 # Política e Modelo de Segurança — Gmail Cleaner Buddy
 
 Este documento descreve as práticas de segurança da aplicação, seguindo

@@ -34,3 +34,42 @@ We may update this Privacy Policy from time to time. Any changes will be reflect
 
 ## 8. Contact Us
 If you have any questions or concerns about this Privacy Policy, please contact the developer via this GitHub repository: https://github.com/mbastida43/gmailcleanerbuddy
+
+---
+
+# Política de Privacidade do Gmail Cleaner Buddy
+
+**Data de vigência:** 17 de junho de 2026
+
+O Gmail Cleaner Buddy ("nós", "nosso" ou "nos") tem o compromisso de proteger sua privacidade. Esta Política de Privacidade explica como nossa aplicação processa informações quando você usa nossa ferramenta para identificar e limpar os 10 principais remetentes que causam desordem na sua Caixa de Entrada do Google.
+
+## 1. Informações que Coletamos e Processamos
+O Gmail Cleaner Buddy só acessa os dados da sua conta Google por meio da API oficial do Gmail após você conceder permissão explícita.
+* **Escopo de Acesso:** solicitamos permissão para ler e gerenciar seus emails (por exemplo, `https://googleapis.com` ou `https://googleapis.com`).
+* **Dados Processados:** a aplicação analisa metadados dos emails (como endereços de remetentes e contagens de volume) estritamente para identificar os 10 remetentes mais frequentes ("ofensores").
+
+## 2. Como Usamos Seus Dados
+Os dados acessados são usados exclusivamente para a funcionalidade principal da aplicação:
+* Para contar e exibir os 10 principais remetentes que enchem sua caixa de entrada.
+* Para ajudá-lo a excluir ou arquivar mensagens desses remetentes específicos, com base no seu comando direto.
+
+## 3. Armazenamento e Retenção de Dados
+**Nós não armazenamos seus dados.**
+* Todo o processamento acontece localmente na sua sessão ou na memória temporária necessária para executar as chamadas à API.
+* Nenhum conteúdo de email, endereço de remetente ou informação pessoal é jamais salvo em um banco de dados, servidor ou armazenamento persistente externo gerenciado por nós.
+* Seus tokens OAuth do Google são tratados com segurança e não são armazenados pela aplicação além da sessão ativa.
+
+## 4. Compartilhamento e Divulgação de Dados
+Nós não vendemos, negociamos, alugamos nem compartilhamos qualquer informação pessoal ou dado de email seu com terceiros. Seus dados permanecem inteiramente dentro do seu ecossistema Google e da sua sessão local ativa.
+
+## 5. Política de Dados de Usuário dos Serviços de API do Google
+O uso e a transferência, pelo Gmail Cleaner Buddy, de informações recebidas das APIs do Google para qualquer outro aplicativo obedecerão à [Política de Dados de Usuário dos Serviços de API do Google](https://google.com), incluindo os requisitos de Uso Limitado (Limited Use).
+
+## 6. Segurança
+Implementamos medidas de segurança padrão para proteger sua sessão ativa. Como não hospedamos nem armazenamos seus dados em servidores externos, a segurança dos seus emails depende diretamente da infraestrutura do Google e da segurança do seu próprio dispositivo.
+
+## 7. Alterações nesta Política de Privacidade
+Podemos atualizar esta Política de Privacidade periodicamente. Quaisquer alterações serão refletidas diretamente neste arquivo com uma data de vigência atualizada.
+
+## 8. Fale Conosco
+Se você tiver dúvidas ou preocupações sobre esta Política de Privacidade, entre em contato com o desenvolvedor por este repositório do GitHub: https://github.com/mbastida43/gmailcleanerbuddy

@@ -36,3 +36,44 @@ We reserve the right to update or modify these Terms at any time. Any changes wi
 
 ## 9. Contact Information
 For any questions regarding these Terms, please open an issue or contact the developer via the official repository: https://github.com
+
+---
+
+# Termos de Serviço do Gmail Cleaner Buddy
+
+**Data de vigência:** 17 de junho de 2026
+
+Bem-vindo ao Gmail Cleaner Buddy. Ao acessar ou usar nossa aplicação, você concorda em ficar vinculado a estes Termos de Serviço ("Termos"). Se você não concordar com estes Termos, por favor, não use a aplicação.
+
+## 1. Descrição do Serviço
+O Gmail Cleaner Buddy é uma ferramenta de código aberto criada para ajudar os usuários a otimizar sua Caixa de Entrada do Google, identificando os 10 principais remetentes que causam desordem ("ofensores") e oferecendo funcionalidade para limpar ou gerenciar esses emails por meio da API oficial do Gmail do Google.
+
+## 2. Elegibilidade e Autenticação da Conta Google
+* Para usar esta aplicação, você deve conceder permissão por meio da autenticação Google OAuth.
+* Você é o único responsável por manter a segurança da sua conta Google e das suas credenciais.
+* A aplicação só age mediante seu comando explícito para ler, arquivar ou excluir emails.
+
+## 3. Uso Aceitável e Restrições
+Você concorda em NÃO usar o Gmail Cleaner Buddy para:
+* Violar quaisquer leis, regulamentos ou direitos de terceiros aplicáveis.
+* Tentar fazer engenharia reversa, perturbar ou interferir na segurança ou no desempenho da infraestrutura da API do Gmail do Google.
+* Usar a ferramenta para spam automatizado ou quaisquer finalidades maliciosas.
+
+## 4. Rescisão do Serviço
+Reservamo-nos o direito de modificar, suspender ou encerrar a aplicação ou seu acesso a ela a qualquer momento, sem aviso prévio, por qualquer motivo, inclusive se acreditarmos que você violou estes Termos. Você pode revogar o acesso da aplicação à sua conta Google a qualquer momento nas configurações de Segurança da sua Conta Google.
+
+## 5. Isenção de Garantias
+* O Gmail Cleaner Buddy é fornecido "COMO ESTÁ" e "CONFORME DISPONÍVEL", sem garantias de qualquer tipo, expressas ou implícitas.
+* **Aviso Importante:** como esta ferramenta modifica e exclui emails com base nas suas ações, não garantimos que não ocorrerá perda de dados caso você autorize uma exclusão. Você usa esta aplicação por sua conta e risco.
+
+## 6. Limitação de Responsabilidade
+Na máxima extensão permitida por lei, o desenvolvedor ("mbastida43") não será responsável por quaisquer danos diretos, indiretos, incidentais, especiais, consequenciais ou exemplares, incluindo, mas não se limitando a, danos por perda de dados, emails, reputação (goodwill) ou outras perdas intangíveis resultantes do uso ou da incapacidade de usar este serviço.
+
+## 7. Legislação Aplicável
+Estes Termos serão regidos e interpretados de acordo com as leis da jurisdição do desenvolvedor, sem consideração aos seus princípios de conflito de leis.
+
+## 8. Alterações nos Termos
+Reservamo-nos o direito de atualizar ou modificar estes Termos a qualquer momento. Quaisquer alterações serão publicadas diretamente neste arquivo com uma data de vigência atualizada. O uso continuado da aplicação constitui a aceitação dos Termos revisados.
+
+## 9. Informações de Contato
+Para qualquer dúvida sobre estes Termos, abra uma issue ou entre em contato com o desenvolvedor pelo repositório oficial: https://github.com
