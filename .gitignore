@@ -21,6 +21,9 @@ Thumbs.db
 # Arquivos históricos
 *.old
 
+# Anotações de trabalho — temporárias, só fazem sentido na máquina local
+/estado_atual.txt
+
 # Build TypeScript (gerado a partir de src/)
 /dist/
 /public/app.js
