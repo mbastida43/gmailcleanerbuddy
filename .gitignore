@@ -24,6 +24,9 @@ Thumbs.db
 # Anotações de trabalho — temporárias, só fazem sentido na máquina local
 /estado_atual.txt
 
+# Skills locais do Claude Code — ferramenta pessoal, não faz parte do app
+/.claude/skills/
+
 # Build TypeScript (gerado a partir de src/)
 /dist/
 /public/app.js
