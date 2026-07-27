@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gmail Cleaner Buddy — Clean up your inbox</title>
+<title>Gmail Cleaner Buddy</title>
 <meta name="description" content="Connect any Gmail account via OAuth2, see the Top 10 senders taking up the most space, and move their emails to the trash — open source and privacy-first." />
 <style>
   :root{
@@ -30,6 +30,8 @@
   .wrap{width:min(1080px,100%);margin:auto;padding:0 20px;}
   a{color:var(--blue);text-decoration:none;}
   a:hover{text-decoration:underline;}
+  code{background:color-mix(in srgb,var(--muted) 16%,transparent);padding:2px 7px;border-radius:6px;
+    font-family:ui-monospace,'SFMono-Regular',Consolas,monospace;font-size:.88em;}
 
   /* Header */
   header{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
@@ -44,7 +46,7 @@
   .nav-links{display:flex;align-items:center;gap:22px;}
   .nav-links a{color:var(--muted);font-weight:600;font-size:14px;}
   .nav-links a:hover{color:var(--text);text-decoration:none;}
-  @media(max-width:720px){.nav-links a.hide-sm{display:none;}}
+  @media(max-width:860px){.nav-links a.hide-sm{display:none;}}
 
   /* Language selector */
   .lang{position:relative;}
@@ -65,25 +67,36 @@
   .flag{font-size:18px;line-height:1;}
 
   /* Hero */
-  .hero{text-align:center;padding:72px 0 40px;}
+  .hero{text-align:center;padding:72px 0 30px;}
   .badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;
     text-transform:uppercase;letter-spacing:.6px;color:var(--blue);
     background:color-mix(in srgb,var(--blue) 12%,transparent);
     padding:7px 14px;border-radius:999px;margin-bottom:22px;}
-  .hero h1{font-size:clamp(34px,6vw,56px);font-weight:900;letter-spacing:-1.2px;line-height:1.05;}
+  .hero h1{font-size:clamp(36px,7vw,64px);font-weight:900;letter-spacing:-1.6px;line-height:1.02;}
   .hero h1 .grad{background:linear-gradient(135deg,var(--blue),var(--green),var(--yellow),var(--red));
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-  .hero p.tag{font-size:clamp(17px,2.4vw,21px);color:var(--muted);max-width:640px;margin:20px auto 0;}
-  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px;}
+  .hero p.lead{font-size:clamp(19px,2.8vw,25px);font-weight:800;letter-spacing:-.4px;margin-top:14px;}
+  .hero p.tag{font-size:clamp(16px,2.4vw,19px);color:var(--muted);max-width:640px;margin:14px auto 0;}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
   .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:14px;
     font-weight:800;font-size:15px;cursor:pointer;border:1px solid transparent;transition:.18s;}
   .btn:hover{transform:translateY(-2px);text-decoration:none;}
   .btn-primary{background:var(--text);color:var(--bg);}
   .btn-ghost{background:var(--card);border-color:var(--line);color:var(--text);}
 
+  /* Quick stats bar */
+  .statbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;
+    margin:8px 0 10px;}
+  .statbar div{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:18px 14px;text-align:center;box-shadow:var(--shadow);}
+  .statbar b{display:block;font-size:26px;font-weight:900;letter-spacing:-.6px;
+    background:linear-gradient(135deg,var(--blue),var(--green));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .statbar span{color:var(--muted);font-size:13px;font-weight:600;}
+
   section{padding:48px 0;}
   .sec-title{text-align:center;font-size:clamp(26px,4vw,36px);font-weight:900;letter-spacing:-.6px;margin-bottom:10px;}
-  .sec-sub{text-align:center;color:var(--muted);max-width:600px;margin:0 auto 40px;}
+  .sec-sub{text-align:center;color:var(--muted);max-width:620px;margin:0 auto 40px;}
 
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -93,6 +106,35 @@
   .card h3{font-size:18px;font-weight:800;margin-bottom:8px;}
   .card p{color:var(--muted);font-size:14.5px;}
 
+  /* App preview mockup */
+  .mock{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;max-width:760px;margin:0 auto;}
+  .mock-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);
+    background:color-mix(in srgb,var(--muted) 8%,transparent);}
+  .dot{width:11px;height:11px;border-radius:50%;}
+  .mock-url{margin-left:10px;color:var(--muted);font-size:12.5px;
+    font-family:ui-monospace,'SFMono-Regular',Consolas,monospace;}
+  .mock-body{padding:22px;}
+  .mock-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:22px;}
+  .mock-stats div{background:color-mix(in srgb,var(--blue) 8%,transparent);
+    border:1px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center;}
+  .mock-stats b{display:block;font-size:21px;font-weight:900;letter-spacing:-.4px;}
+  .mock-stats span{color:var(--muted);font-size:12px;font-weight:600;}
+  .mock-list-title{font-size:14px;font-weight:800;margin-bottom:12px;}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);
+    border-radius:14px;margin-bottom:10px;}
+  .row .rank{width:28px;height:28px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;
+    font-weight:900;font-size:13px;color:#fff;background:linear-gradient(135deg,var(--blue),var(--green));}
+  .row .who{flex:1 1 auto;min-width:0;}
+  .row .who b{display:block;font-size:14px;font-weight:700;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .row .who span{color:var(--muted);font-size:12.5px;}
+  .row .go{flex:0 0 auto;background:color-mix(in srgb,var(--red) 14%,transparent);
+    color:var(--red);border:1px solid color-mix(in srgb,var(--red) 32%,transparent);
+    border-radius:10px;padding:7px 14px;font-size:13px;font-weight:800;}
+  .mock-note{text-align:center;color:var(--muted);font-size:13px;margin-top:16px;}
+
+  /* Steps */
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;counter-reset:s;}
   .step{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px;position:relative;box-shadow:var(--shadow);}
   .step::before{counter-increment:s;content:counter(s);position:absolute;top:-14px;left:22px;
@@ -100,7 +142,16 @@
     background:linear-gradient(135deg,var(--blue),var(--green));box-shadow:0 8px 18px rgba(66,133,244,.3);}
   .step h3{margin:12px 0 8px;font-size:17px;font-weight:800;}
   .step p{color:var(--muted);font-size:14.5px;}
-  .step code{background:color-mix(in srgb,var(--muted) 16%,transparent);padding:2px 7px;border-radius:6px;font-size:13px;}
+
+  /* Two-column check lists (security / limits) */
+  /* minmax is wide enough that four items settle into a 2x2 block instead of
+     leaving an orphan card on a third column. */
+  .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;}
+  .check{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);}
+  .check .ico{font-size:20px;line-height:1.4;flex:0 0 auto;}
+  .check h3{font-size:16px;font-weight:800;margin-bottom:6px;}
+  .check p{color:var(--muted);font-size:14.5px;}
 
   .note{background:color-mix(in srgb,var(--yellow) 14%,transparent);
     border:1px solid color-mix(in srgb,var(--yellow) 40%,transparent);
@@ -126,6 +177,7 @@
     <div class="nav-links">
       <a href="#features" class="hide-sm" data-i18n="nav_features">Features</a>
       <a href="#how" class="hide-sm" data-i18n="nav_how">How it works</a>
+      <a href="#security" class="hide-sm" data-i18n="nav_sec">Security</a>
       <a href="https://github.com/mbastida43/gmailcleanerbuddy" class="hide-sm" data-i18n="nav_code">Code</a>
       <div class="lang">
         <button class="lang-btn" id="langBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
@@ -143,13 +195,21 @@
 
   <section class="hero">
     <span class="badge" data-i18n="hero_badge">✦ Open source · OAuth2 · Privacy-first</span>
-    <h1><span data-i18n="hero_title_a">Take back your</span> <span class="grad" data-i18n="hero_title_b">Gmail inbox</span></h1>
+    <h1><span class="grad">Gmail Cleaner Buddy</span></h1>
+    <p class="lead" data-i18n="hero_title">Take back your Gmail inbox</p>
     <p class="tag" data-i18n="hero_tag">Connect any Gmail account via OAuth2, see the Top 10 senders taking up the most space, and move their emails to the trash — in one click.</p>
     <div class="cta">
       <a class="btn btn-primary" href="https://github.com/mbastida43/gmailcleanerbuddy" data-i18n="cta_github">★ View on GitHub</a>
       <a class="btn btn-ghost" href="https://github.com/mbastida43/gmailcleanerbuddy/blob/main/INSTRUCTIONS.md" data-i18n="cta_start">Get started</a>
     </div>
   </section>
+
+  <div class="statbar">
+    <div><b>7</b><span data-i18n="st1_l">Interface languages</span></div>
+    <div><b>1</b><span data-i18n="st2_l">Google scope requested</span></div>
+    <div><b>0</b><span data-i18n="st3_l">Data stored on servers</span></div>
+    <div><b>MIT</b><span data-i18n="st4_l">Open-source license</span></div>
+  </div>
 
   <section id="features">
     <h2 class="sec-title" data-i18n="feat_title">Why Gmail Cleaner Buddy</h2>
@@ -178,6 +238,44 @@
     </div>
   </section>
 
+  <section id="preview">
+    <h2 class="sec-title" data-i18n="prev_title">A look at the app</h2>
+    <p class="sec-sub" data-i18n="prev_sub">Once you sign in, the whole app is a single screen: your mailbox stats and the senders filling it up.</p>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="dot" style="background:var(--red)"></span>
+        <span class="dot" style="background:var(--yellow)"></span>
+        <span class="dot" style="background:var(--green)"></span>
+        <span class="mock-url">localhost:3000</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-stats">
+          <div><b>500</b><span data-i18n="pv_analyzed">Emails analyzed</span></div>
+          <div><b>2.4 GB</b><span data-i18n="pv_space">Total space</span></div>
+          <div><b>128</b><span data-i18n="pv_senders">Unique senders</span></div>
+          <div><b>1,046</b><span data-i18n="pv_top10">Top 10 (emails)</span></div>
+        </div>
+        <div class="mock-list-title" data-i18n="pv_list">📬 Senders with the most emails</div>
+        <div class="row">
+          <span class="rank">1</span>
+          <span class="who"><b>newsletter@shop.example</b><span>✉ 342 · 1.2 GB</span></span>
+          <span class="go" data-i18n="pv_clean">Clean</span>
+        </div>
+        <div class="row">
+          <span class="rank">2</span>
+          <span class="who"><b>no-reply@social.example</b><span>✉ 218 · 640 MB</span></span>
+          <span class="go" data-i18n="pv_clean">Clean</span>
+        </div>
+        <div class="row">
+          <span class="rank">3</span>
+          <span class="who"><b>promos@travel.example</b><span>✉ 156 · 410 MB</span></span>
+          <span class="go" data-i18n="pv_clean">Clean</span>
+        </div>
+      </div>
+    </div>
+    <p class="mock-note" data-i18n="pv_note">Illustration with sample data — the real app shows your own mailbox.</p>
+  </section>
+
   <section id="how">
     <h2 class="sec-title" data-i18n="how_title">How it works</h2>
     <p class="sec-sub" data-i18n="how_sub">Run it locally in three steps — it's a lightweight Node + browser app.</p>
@@ -187,12 +285,109 @@
         <p data-i18n="step1_d">Enable the Gmail API and create an OAuth 2.0 client. Full walkthrough in the instructions.</p>
       </div>
       <div class="step">
-        <h3 data-i18n="step2_t">Install & run</h3>
+        <h3 data-i18n="step2_t">Install &amp; run</h3>
         <p data-i18n="step2_d">Run <code>npm install</code> then <code>npm start</code> and open <code>localhost:3000</code>.</p>
       </div>
       <div class="step">
-        <h3 data-i18n="step3_t">Sign in & clean</h3>
+        <h3 data-i18n="step3_t">Sign in &amp; clean</h3>
         <p data-i18n="step3_d">Sign in with Google, review the Top 10 senders, and hit Clean to reclaim space.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <h2 class="sec-title" data-i18n="arch_title">Under the hood</h2>
+    <p class="sec-sub" data-i18n="arch_sub">Roughly 1,400 lines of TypeScript, no database and no third-party backend.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="ico">🧩</div>
+        <h3 data-i18n="arch1_t">TypeScript end to end</h3>
+        <p data-i18n="arch1_d">Server, browser client and this very page are written in TypeScript and compiled before they run.</p>
+      </div>
+      <div class="card">
+        <div class="ico">⚙️</div>
+        <h3 data-i18n="arch2_t">Node + Express server</h3>
+        <p data-i18n="arch2_d">A single <code>server.ts</code> drives the OAuth flow and exposes a small JSON API to the browser.</p>
+      </div>
+      <div class="card">
+        <div class="ico">📮</div>
+        <h3 data-i18n="arch3_t">Official Gmail API</h3>
+        <p data-i18n="arch3_d">Google's <code>googleapis</code> client lists your messages, groups them by sender and moves them with <code>batchModify</code>.</p>
+      </div>
+      <div class="card">
+        <div class="ico">🚫</div>
+        <h3 data-i18n="arch4_t">No database</h3>
+        <p data-i18n="arch4_d">Nothing is persisted: the access token lives in the server session and is gone the moment you sign out.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="security">
+    <h2 class="sec-title" data-i18n="sec_title">Built with security in mind</h2>
+    <p class="sec-sub" data-i18n="sec_sub">The app follows the OWASP Top 10 checklist documented in SECURITY.md.</p>
+    <div class="checks">
+      <div class="check">
+        <span class="ico">🔑</span>
+        <div>
+          <h3 data-i18n="sec1_t">One restricted scope</h3>
+          <p data-i18n="sec1_d">Only <code>gmail.modify</code> is requested — enough to read and to trash, nothing more. Your password is never seen.</p>
+        </div>
+      </div>
+      <div class="check">
+        <span class="ico">🪖</span>
+        <div>
+          <h3 data-i18n="sec2_t">Hardened HTTP</h3>
+          <p data-i18n="sec2_d">Helmet sets a strict Content-Security-Policy, HSTS in production, a locked-down Permissions-Policy and <code>no-store</code> on every API response.</p>
+        </div>
+      </div>
+      <div class="check">
+        <span class="ico">⏱️</span>
+        <div>
+          <h3 data-i18n="sec3_t">Short session, CSRF-checked</h3>
+          <p data-i18n="sec3_d">The signed httpOnly cookie lasts one hour — the same life as the Google access token — and every API call is verified as same-origin.</p>
+        </div>
+      </div>
+      <div class="check">
+        <span class="ico">🚦</span>
+        <div>
+          <h3 data-i18n="sec4_t">Rate limited</h3>
+          <p data-i18n="sec4_d">Up to 100 API requests and 10 sign-in attempts per 15 minutes, per IP address.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="limits">
+    <h2 class="sec-title" data-i18n="lim_title">Good to know</h2>
+    <p class="sec-sub" data-i18n="lim_sub">A few honest limits before you run it.</p>
+    <div class="checks">
+      <div class="check">
+        <span class="ico">🔍</span>
+        <div>
+          <h3 data-i18n="lim1_t">Analyzes a recent sample</h3>
+          <p data-i18n="lim1_d">The scan covers your 500 most recent messages; exact totals are then fetched for the senders at the top.</p>
+        </div>
+      </div>
+      <div class="check">
+        <span class="ico">⚡</span>
+        <div>
+          <h3 data-i18n="lim2_t">Cleaning is bulk and fast</h3>
+          <p data-i18n="lim2_d">Messages are moved with <code>batchModify</code>, up to 1,000 per call — hundreds of emails clear in seconds.</p>
+        </div>
+      </div>
+      <div class="check">
+        <span class="ico">♻️</span>
+        <div>
+          <h3 data-i18n="lim3_t">Nothing is deleted forever</h3>
+          <p data-i18n="lim3_d">Emails are moved to the Gmail trash, where you can restore them for 30 days.</p>
+        </div>
+      </div>
+      <div class="check">
+        <span class="ico">🧪</span>
+        <div>
+          <h3 data-i18n="lim4_t">Testing mode by default</h3>
+          <p data-i18n="lim4_d">While the Google project is unverified, only accounts added as test users (up to 100) can sign in.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -220,195 +415,6 @@
   </div>
 </footer>
 
-<script>
-const LANGS = [
-  { code:"en", label:"EN", flag:"🇬🇧", name:"English" },
-  { code:"pt", label:"PT", flag:"🇧🇷", name:"Português" },
-  { code:"es", label:"ES", flag:"🇪🇸", name:"Español" },
-  { code:"fr", label:"FR", flag:"🇫🇷", name:"Français" },
-  { code:"it", label:"IT", flag:"🇮🇹", name:"Italiano" },
-  { code:"ru", label:"RU", flag:"🇷🇺", name:"Русский" },
-  { code:"zh", label:"中文", flag:"🇨🇳", name:"中文" }
-];
-
-const I18N = {
-  en:{
-    nav_features:"Features", nav_how:"How it works", nav_code:"Code",
-    hero_badge:"✦ Open source · OAuth2 · Privacy-first",
-    hero_title_a:"Take back your", hero_title_b:"Gmail inbox",
-    hero_tag:"Connect any Gmail account via OAuth2, see the Top 10 senders taking up the most space, and move their emails to the trash — in one click.",
-    cta_github:"★ View on GitHub", cta_start:"Get started",
-    feat_title:"Why Gmail Cleaner Buddy",
-    feat_sub:"A small, self-hosted tool that does one thing well: find who is clogging your inbox and clear them out.",
-    feat1_t:"Secure OAuth2 login", feat1_d:"Sign in with Google's official account picker. No passwords are ever seen or stored by the app.",
-    feat2_t:"Top 10 offenders", feat2_d:"Instantly see the senders taking up the most space and message count in your mailbox.",
-    feat3_t:"One-click cleanup", feat3_d:"Move every email from a noisy sender straight to the trash with a single click.",
-    feat4_t:"Privacy-first", feat4_d:"Your data is never stored on any server. Everything runs in your own session, hardened per OWASP Top 10.",
-    how_title:"How it works", how_sub:"Run it locally in three steps — it's a lightweight Node + browser app.",
-    step1_t:"Configure Google Cloud", step1_d:"Enable the Gmail API and create an OAuth 2.0 client. Full walkthrough in the instructions.",
-    step2_t:"Install & run", step2_d:"Run <code>npm install</code> then <code>npm start</code> and open <code>localhost:3000</code>.",
-    step3_t:"Sign in & clean", step3_d:"Sign in with Google, review the Top 10 senders, and hit Clean to reclaim space.",
-    selfhost:"Gmail Cleaner Buddy is an open-source, self-hosted application (Node server + browser). This page explains the project; to actually clean your inbox, run the app on your own machine following the instructions. Available in English, Português, Español, Français, Italiano, Русский and 中文.",
-    f_repo:"Repository", f_docs:"Instructions", f_sec:"Security", f_priv:"Privacy", f_terms:"Terms", f_lic:"License"
-  },
-  pt:{
-    nav_features:"Recursos", nav_how:"Como funciona", nav_code:"Código",
-    hero_badge:"✦ Código aberto · OAuth2 · Privacidade em primeiro lugar",
-    hero_title_a:"Recupere sua", hero_title_b:"caixa do Gmail",
-    hero_tag:"Conecte qualquer conta Gmail via OAuth2, veja os Top 10 remetentes que mais ocupam espaço e mova os emails deles para a lixeira — em um clique.",
-    cta_github:"★ Ver no GitHub", cta_start:"Começar",
-    feat_title:"Por que o Gmail Cleaner Buddy",
-    feat_sub:"Uma ferramenta pequena e auto-hospedada que faz uma coisa bem: descobrir quem entope sua caixa e limpar tudo.",
-    feat1_t:"Login OAuth2 seguro", feat1_d:"Entre com o seletor de contas oficial do Google. O app nunca vê nem armazena senhas.",
-    feat2_t:"Top 10 ofensores", feat2_d:"Veja na hora os remetentes que mais ocupam espaço e quantidade de mensagens na sua caixa.",
-    feat3_t:"Limpeza em um clique", feat3_d:"Mova todos os emails de um remetente barulhento direto para a lixeira com um único clique.",
-    feat4_t:"Privacidade em primeiro lugar", feat4_d:"Seus dados nunca são armazenados em servidor. Tudo roda na sua própria sessão, endurecido conforme o OWASP Top 10.",
-    how_title:"Como funciona", how_sub:"Execute localmente em três passos — é um app leve de Node + navegador.",
-    step1_t:"Configurar o Google Cloud", step1_d:"Ative a Gmail API e crie um cliente OAuth 2.0. Passo a passo completo nas instruções.",
-    step2_t:"Instalar e executar", step2_d:"Rode <code>npm install</code>, depois <code>npm start</code> e abra <code>localhost:3000</code>.",
-    step3_t:"Entrar e limpar", step3_d:"Entre com o Google, revise os Top 10 remetentes e clique em Limpar para recuperar espaço.",
-    selfhost:"O Gmail Cleaner Buddy é uma aplicação de código aberto e auto-hospedada (servidor Node + navegador). Esta página explica o projeto; para de fato limpar sua caixa, execute o app na sua própria máquina seguindo as instruções. Disponível em English, Português, Español, Français, Italiano, Русский e 中文.",
-    f_repo:"Repositório", f_docs:"Instruções", f_sec:"Segurança", f_priv:"Privacidade", f_terms:"Termos", f_lic:"Licença"
-  },
-  es:{
-    nav_features:"Funciones", nav_how:"Cómo funciona", nav_code:"Código",
-    hero_badge:"✦ Código abierto · OAuth2 · La privacidad primero",
-    hero_title_a:"Recupera tu", hero_title_b:"bandeja de Gmail",
-    hero_tag:"Conecta cualquier cuenta de Gmail mediante OAuth2, mira los 10 principales remitentes que más espacio ocupan y mueve sus correos a la papelera — con un clic.",
-    cta_github:"★ Ver en GitHub", cta_start:"Empezar",
-    feat_title:"Por qué Gmail Cleaner Buddy",
-    feat_sub:"Una herramienta pequeña y autoalojada que hace una cosa bien: encontrar quién satura tu bandeja y limpiarlo.",
-    feat1_t:"Inicio de sesión OAuth2 seguro", feat1_d:"Inicia sesión con el selector de cuentas oficial de Google. La app nunca ve ni guarda contraseñas.",
-    feat2_t:"Top 10 infractores", feat2_d:"Ve al instante los remitentes que más espacio y mensajes ocupan en tu buzón.",
-    feat3_t:"Limpieza con un clic", feat3_d:"Mueve todos los correos de un remitente molesto directo a la papelera con un solo clic.",
-    feat4_t:"La privacidad primero", feat4_d:"Tus datos nunca se guardan en ningún servidor. Todo se ejecuta en tu propia sesión, reforzado según el OWASP Top 10.",
-    how_title:"Cómo funciona", how_sub:"Ejecútalo localmente en tres pasos — es una app ligera de Node + navegador.",
-    step1_t:"Configurar Google Cloud", step1_d:"Activa la Gmail API y crea un cliente OAuth 2.0. Guía completa en las instrucciones.",
-    step2_t:"Instalar y ejecutar", step2_d:"Ejecuta <code>npm install</code>, luego <code>npm start</code> y abre <code>localhost:3000</code>.",
-    step3_t:"Inicia sesión y limpia", step3_d:"Inicia sesión con Google, revisa los 10 principales remitentes y pulsa Limpiar para recuperar espacio.",
-    selfhost:"Gmail Cleaner Buddy es una aplicación de código abierto y autoalojada (servidor Node + navegador). Esta página explica el proyecto; para limpiar realmente tu bandeja, ejecuta la app en tu propia máquina siguiendo las instrucciones. Disponible en English, Português, Español, Français, Italiano, Русский y 中文.",
-    f_repo:"Repositorio", f_docs:"Instrucciones", f_sec:"Seguridad", f_priv:"Privacidad", f_terms:"Términos", f_lic:"Licencia"
-  },
-  fr:{
-    nav_features:"Fonctionnalités", nav_how:"Comment ça marche", nav_code:"Code",
-    hero_badge:"✦ Open source · OAuth2 · Priorité à la vie privée",
-    hero_title_a:"Reprenez le contrôle de votre", hero_title_b:"boîte Gmail",
-    hero_tag:"Connectez n'importe quel compte Gmail via OAuth2, voyez les 10 principaux expéditeurs qui occupent le plus d'espace et déplacez leurs e-mails vers la corbeille — en un clic.",
-    cta_github:"★ Voir sur GitHub", cta_start:"Commencer",
-    feat_title:"Pourquoi Gmail Cleaner Buddy",
-    feat_sub:"Un petit outil auto-hébergé qui fait une chose bien : trouver qui encombre votre boîte et faire le ménage.",
-    feat1_t:"Connexion OAuth2 sécurisée", feat1_d:"Connectez-vous avec le sélecteur de comptes officiel de Google. L'app ne voit ni ne stocke jamais de mot de passe.",
-    feat2_t:"Top 10 des fautifs", feat2_d:"Voyez instantanément les expéditeurs qui occupent le plus d'espace et de messages dans votre boîte.",
-    feat3_t:"Nettoyage en un clic", feat3_d:"Déplacez tous les e-mails d'un expéditeur envahissant directement vers la corbeille en un seul clic.",
-    feat4_t:"Priorité à la vie privée", feat4_d:"Vos données ne sont jamais stockées sur un serveur. Tout s'exécute dans votre propre session, durci selon l'OWASP Top 10.",
-    how_title:"Comment ça marche", how_sub:"Lancez-le localement en trois étapes — c'est une app légère Node + navigateur.",
-    step1_t:"Configurer Google Cloud", step1_d:"Activez l'API Gmail et créez un client OAuth 2.0. Guide complet dans les instructions.",
-    step2_t:"Installer et lancer", step2_d:"Lancez <code>npm install</code> puis <code>npm start</code> et ouvrez <code>localhost:3000</code>.",
-    step3_t:"Se connecter et nettoyer", step3_d:"Connectez-vous avec Google, examinez les 10 principaux expéditeurs et cliquez sur Nettoyer pour récupérer de l'espace.",
-    selfhost:"Gmail Cleaner Buddy est une application open source auto-hébergée (serveur Node + navigateur). Cette page présente le projet ; pour réellement nettoyer votre boîte, lancez l'app sur votre propre machine en suivant les instructions. Disponible en English, Português, Español, Français, Italiano, Русский et 中文.",
-    f_repo:"Dépôt", f_docs:"Instructions", f_sec:"Sécurité", f_priv:"Confidentialité", f_terms:"Conditions", f_lic:"Licence"
-  },
-  it:{
-    nav_features:"Funzionalità", nav_how:"Come funziona", nav_code:"Codice",
-    hero_badge:"✦ Open source · OAuth2 · Privacy al primo posto",
-    hero_title_a:"Riprenditi la tua", hero_title_b:"casella Gmail",
-    hero_tag:"Collega qualsiasi account Gmail tramite OAuth2, vedi i Top 10 mittenti che occupano più spazio e sposta le loro email nel cestino — con un clic.",
-    cta_github:"★ Vedi su GitHub", cta_start:"Inizia",
-    feat_title:"Perché Gmail Cleaner Buddy",
-    feat_sub:"Uno strumento piccolo e self-hosted che fa bene una cosa: trovare chi intasa la tua casella e ripulirla.",
-    feat1_t:"Accesso OAuth2 sicuro", feat1_d:"Accedi con il selettore di account ufficiale di Google. L'app non vede né memorizza mai le password.",
-    feat2_t:"Top 10 responsabili", feat2_d:"Vedi subito i mittenti che occupano più spazio e più messaggi nella tua casella.",
-    feat3_t:"Pulizia con un clic", feat3_d:"Sposta tutte le email di un mittente rumoroso direttamente nel cestino con un solo clic.",
-    feat4_t:"Privacy al primo posto", feat4_d:"I tuoi dati non vengono mai memorizzati su alcun server. Tutto gira nella tua sessione, rafforzato secondo l'OWASP Top 10.",
-    how_title:"Come funziona", how_sub:"Eseguilo localmente in tre passaggi — è un'app leggera Node + browser.",
-    step1_t:"Configura Google Cloud", step1_d:"Abilita la Gmail API e crea un client OAuth 2.0. Guida completa nelle istruzioni.",
-    step2_t:"Installa ed esegui", step2_d:"Esegui <code>npm install</code> poi <code>npm start</code> e apri <code>localhost:3000</code>.",
-    step3_t:"Accedi e pulisci", step3_d:"Accedi con Google, controlla i Top 10 mittenti e premi Pulisci per recuperare spazio.",
-    selfhost:"Gmail Cleaner Buddy è un'applicazione open source e self-hosted (server Node + browser). Questa pagina spiega il progetto; per pulire davvero la tua casella, esegui l'app sulla tua macchina seguendo le istruzioni. Disponibile in English, Português, Español, Français, Italiano, Русский e 中文.",
-    f_repo:"Repository", f_docs:"Istruzioni", f_sec:"Sicurezza", f_priv:"Privacy", f_terms:"Termini", f_lic:"Licenza"
-  },
-  ru:{
-    nav_features:"Возможности", nav_how:"Как это работает", nav_code:"Код",
-    hero_badge:"✦ Открытый код · OAuth2 · Конфиденциальность прежде всего",
-    hero_title_a:"Верните себе свой", hero_title_b:"почтовый ящик Gmail",
-    hero_tag:"Подключите любой аккаунт Gmail через OAuth2, посмотрите 10 главных отправителей, занимающих больше всего места, и переместите их письма в корзину — в один клик.",
-    cta_github:"★ Смотреть на GitHub", cta_start:"Начать",
-    feat_title:"Почему Gmail Cleaner Buddy",
-    feat_sub:"Небольшой инструмент с самостоятельным размещением, который делает одно дело хорошо: находит, кто засоряет ваш ящик, и очищает его.",
-    feat1_t:"Безопасный вход через OAuth2", feat1_d:"Входите через официальный выбор аккаунтов Google. Приложение никогда не видит и не хранит пароли.",
-    feat2_t:"10 главных нарушителей", feat2_d:"Мгновенно смотрите отправителей, занимающих больше всего места и сообщений в вашем ящике.",
-    feat3_t:"Очистка в один клик", feat3_d:"Переместите все письма назойливого отправителя прямо в корзину одним кликом.",
-    feat4_t:"Конфиденциальность прежде всего", feat4_d:"Ваши данные никогда не хранятся ни на одном сервере. Всё работает в вашей сессии, усилено по OWASP Top 10.",
-    how_title:"Как это работает", how_sub:"Запустите локально в три шага — это лёгкое приложение Node + браузер.",
-    step1_t:"Настройте Google Cloud", step1_d:"Включите Gmail API и создайте клиент OAuth 2.0. Полное руководство в инструкции.",
-    step2_t:"Установите и запустите", step2_d:"Выполните <code>npm install</code>, затем <code>npm start</code> и откройте <code>localhost:3000</code>.",
-    step3_t:"Войдите и очистите", step3_d:"Войдите через Google, просмотрите 10 главных отправителей и нажмите «Очистить», чтобы освободить место.",
-    selfhost:"Gmail Cleaner Buddy — это приложение с открытым кодом и самостоятельным размещением (сервер Node + браузер). Эта страница описывает проект; чтобы действительно очистить ящик, запустите приложение на своём компьютере по инструкции. Доступно на English, Português, Español, Français, Italiano, Русский и 中文.",
-    f_repo:"Репозиторий", f_docs:"Инструкция", f_sec:"Безопасность", f_priv:"Конфиденциальность", f_terms:"Условия", f_lic:"Лицензия"
-  },
-  zh:{
-    nav_features:"功能", nav_how:"工作原理", nav_code:"代码",
-    hero_badge:"✦ 开源 · OAuth2 · 隐私优先",
-    hero_title_a:"重新掌控你的", hero_title_b:"Gmail 收件箱",
-    hero_tag:"通过 OAuth2 连接任意 Gmail 账号，查看占用空间最多的前 10 名发件人，一键将他们的邮件移至垃圾箱。",
-    cta_github:"★ 在 GitHub 查看", cta_start:"开始使用",
-    feat_title:"为什么选择 Gmail Cleaner Buddy",
-    feat_sub:"一个小巧的自托管工具，只把一件事做好：找出谁在塞满你的收件箱，并清理干净。",
-    feat1_t:"安全的 OAuth2 登录", feat1_d:"使用 Google 官方账号选择器登录。应用绝不会看到或存储密码。",
-    feat2_t:"前 10 名占用者", feat2_d:"即时查看在你邮箱中占用最多空间和邮件数量的发件人。",
-    feat3_t:"一键清理", feat3_d:"一键将某个吵闹发件人的所有邮件直接移至垃圾箱。",
-    feat4_t:"隐私优先", feat4_d:"你的数据绝不会存储在任何服务器上。一切都在你自己的会话中运行，并按 OWASP Top 10 加固。",
-    how_title:"工作原理", how_sub:"三步在本地运行 —— 这是一个轻量的 Node + 浏览器应用。",
-    step1_t:"配置 Google Cloud", step1_d:"启用 Gmail API 并创建 OAuth 2.0 客户端。完整步骤见说明文档。",
-    step2_t:"安装并运行", step2_d:"运行 <code>npm install</code>，然后 <code>npm start</code>，并打开 <code>localhost:3000</code>。",
-    step3_t:"登录并清理", step3_d:"使用 Google 登录，查看前 10 名发件人，点击「清理」以释放空间。",
-    selfhost:"Gmail Cleaner Buddy 是一个开源的自托管应用（Node 服务器 + 浏览器）。本页面介绍该项目；若要真正清理你的收件箱，请按照说明在自己的电脑上运行该应用。提供 English、Português、Español、Français、Italiano、Русский 和 中文 版本。",
-    f_repo:"代码仓库", f_docs:"使用说明", f_sec:"安全", f_priv:"隐私", f_terms:"条款", f_lic:"许可证"
-  }
-};
-
-const HTML_KEYS = new Set(["step2_d","step3_d"]);
-const langBtn = document.getElementById("langBtn");
-const langMenu = document.getElementById("langMenu");
-const curFlag = document.getElementById("curFlag");
-const curLabel = document.getElementById("curLabel");
-
-LANGS.forEach(l=>{
-  const b=document.createElement("button");
-  b.type="button"; b.dataset.code=l.code; b.setAttribute("role","option");
-  b.innerHTML=`<span class="flag">${l.flag}</span><span>${l.name}</span>`;
-  b.addEventListener("click",()=>{ setLang(l.code); closeMenu(); });
-  langMenu.appendChild(b);
-});
-
-function applyI18n(code){
-  const dict=I18N[code]||I18N.en;
-  document.querySelectorAll("[data-i18n]").forEach(el=>{
-    const key=el.getAttribute("data-i18n");
-    if(dict[key]!==undefined){
-      if(HTML_KEYS.has(key)) el.innerHTML=dict[key];
-      else el.textContent=dict[key];
-    }
-  });
-  document.documentElement.lang = code==="zh"?"zh-CN":code;
-}
-function setLang(code){
-  const l=LANGS.find(x=>x.code===code)||LANGS[0];
-  curFlag.textContent=l.flag; curLabel.textContent=l.label;
-  applyI18n(code);
-  langMenu.querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected", b.dataset.code===code));
-  try{ localStorage.setItem("gcb_lang", code); }catch(e){}
-}
-function openMenu(){ langMenu.classList.add("open"); langBtn.setAttribute("aria-expanded","true"); }
-function closeMenu(){ langMenu.classList.remove("open"); langBtn.setAttribute("aria-expanded","false"); }
-langBtn.addEventListener("click",e=>{ e.stopPropagation(); langMenu.classList.contains("open")?closeMenu():openMenu(); });
-document.addEventListener("click",()=>closeMenu());
-langMenu.addEventListener("click",e=>e.stopPropagation());
-
-// Default: English, unless a previous choice exists.
-let initial="en";
-try{ const saved=localStorage.getItem("gcb_lang"); if(saved && I18N[saved]) initial=saved; }catch(e){}
-setLang(initial);
-</script>
+<script src="./landing.js"></script>
 </body>
 </html>

@@ -7,12 +7,13 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.json",
     "build:client": "tsc -p tsconfig.client.json",
+    "build:landing": "tsc -p tsconfig.landing.json",
     "prestart": "npm run build",
     "start": "node dist/server.js",
     "dev": "npm run build:client && concurrently \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "nodemon --watch src --ext ts --ignore src/client --exec ts-node src/server.ts",
     "dev:client": "tsc -p tsconfig.client.json --watch --preserveWatchOutput",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.landing.json --noEmit",
     "audit": "npm audit --omit=dev"
   },
   "keywords": [

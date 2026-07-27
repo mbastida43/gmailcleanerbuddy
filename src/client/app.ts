@@ -14,16 +14,16 @@ interface AnalyzeData {
   top10: Offender[];
 }
 
-type Lang = 'pt' | 'en' | 'es' | 'fr';
+type Lang = 'en' | 'pt' | 'es' | 'fr' | 'it' | 'ru' | 'zh';
 
 let currentData: AnalyzeData | null = null;
-let currentLang: Lang = 'pt';
+let currentLang: Lang = 'en';
 
-const LANG_FLAG_CLASSES: Record<Lang, string> = { pt: 'fi fi-br', en: 'fi fi-us', es: 'fi fi-es', fr: 'fi fi-fr' };
-const LANG_LABELS: Record<Lang, string> = { pt: 'PT', en: 'EN', es: 'ES', fr: 'FR' };
+const LANG_FLAG_CLASSES: Record<Lang, string> = { en: 'fi fi-us', pt: 'fi fi-br', es: 'fi fi-es', fr: 'fi fi-fr', it: 'fi fi-it', ru: 'fi fi-ru', zh: 'fi fi-cn' };
+const LANG_LABELS: Record<Lang, string> = { en: 'EN', pt: 'PT', es: 'ES', fr: 'FR', it: 'IT', ru: 'RU', zh: '中文' };
 
 // ===================== i18n =====================
-const LOCALES: Record<Lang, string> = { pt: 'pt-BR', en: 'en-US', es: 'es-ES', fr: 'fr-FR' };
+const LOCALES: Record<Lang, string> = { en: 'en-US', pt: 'pt-BR', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', ru: 'ru-RU', zh: 'zh-CN' };
 
 const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   pt: {
@@ -141,12 +141,99 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanAll': 'Déplacer TOUT le Top 10 vers la corbeille ?',
     'toast.cleaned': '✅ {n} e-mails déplacés vers la corbeille',
     'toast.cleanAllPartial': '⚠️ {removed} déplacés ; {failed} échoués'
+  },
+  it: {
+    'subtitle': '🔐 Connesso a Gmail tramite OAuth2',
+    'auth.title': '🔒 Connetti a Gmail',
+    'auth.desc': 'Autorizza l’accesso al tuo account Gmail per analizzare i mittenti che intasano di più la tua casella e spostarli nel cestino.',
+    'auth.loginBtn': 'Accedi con Google',
+    'auth.note': '🔐 Autenticazione OAuth2 ufficiale di Google<br>🗑️ Autorizzazione a leggere e spostare le tue email nel cestino',
+    'results.title': '🏆 Top 10 mittenti',
+    'btn.cleanAll': '🗑️ Pulisci Top 10',
+    'btn.logout': '🚪 Esci',
+    'stat.analyzed': 'Email analizzate',
+    'stat.space': 'Spazio totale',
+    'stat.senders': 'Mittenti unici',
+    'stat.top10': 'Top 10 (email)',
+    'list.title': '📬 Mittenti con più email',
+    'btn.clean': 'Pulisci',
+    'toast.authSuccess': '✅ Autenticazione riuscita!',
+    'toast.authError': '❌ Errore di autenticazione. Riprova.',
+    'toast.sessionExpired': '🔒 Sessione scaduta. Accedi di nuovo.',
+    'toast.logoutError': '❌ Errore durante la disconnessione',
+    'toast.loadError': '❌ Errore durante il caricamento dei dati',
+    'toast.analyzing': '🔍 Analisi della tua casella...',
+    'toast.analyzePartial': '✅ Analisi parziale: {ok} ok, {failed} non riuscite',
+    'toast.analyzeDone': '✅ Analisi completata!',
+    'toast.analyzeError': '❌ Errore durante l’analisi',
+    'confirm.cleanSender': 'Spostare le email di {sender} nel cestino?',
+    'confirm.cleanAll': 'Spostare TUTTI i Top 10 nel cestino?',
+    'toast.cleaned': '✅ {n} email spostate nel cestino',
+    'toast.cleanAllPartial': '⚠️ {removed} spostate; {failed} non riuscite'
+  },
+  ru: {
+    'subtitle': '🔐 Подключено к Gmail через OAuth2',
+    'auth.title': '🔒 Подключиться к Gmail',
+    'auth.desc': 'Разрешите доступ к вашему аккаунту Gmail, чтобы проанализировать отправителей, которые больше всего заполняют ваш ящик, и переместить их письма в корзину.',
+    'auth.loginBtn': 'Войти через Google',
+    'auth.note': '🔐 Официальная аутентификация Google OAuth2<br>🗑️ Разрешение читать и перемещать ваши письма в корзину',
+    'results.title': '🏆 10 главных отправителей',
+    'btn.cleanAll': '🗑️ Очистить топ-10',
+    'btn.logout': '🚪 Выйти',
+    'stat.analyzed': 'Проанализировано писем',
+    'stat.space': 'Всего места',
+    'stat.senders': 'Уникальных отправителей',
+    'stat.top10': 'Топ-10 (письма)',
+    'list.title': '📬 Отправители с наибольшим числом писем',
+    'btn.clean': 'Очистить',
+    'toast.authSuccess': '✅ Успешная аутентификация!',
+    'toast.authError': '❌ Ошибка аутентификации. Попробуйте снова.',
+    'toast.sessionExpired': '🔒 Сессия истекла. Войдите снова.',
+    'toast.logoutError': '❌ Ошибка при выходе',
+    'toast.loadError': '❌ Ошибка загрузки данных',
+    'toast.analyzing': '🔍 Анализ вашего почтового ящика...',
+    'toast.analyzePartial': '✅ Частичный анализ: {ok} ок, {failed} не удалось',
+    'toast.analyzeDone': '✅ Анализ завершён!',
+    'toast.analyzeError': '❌ Ошибка анализа',
+    'confirm.cleanSender': 'Переместить письма от {sender} в корзину?',
+    'confirm.cleanAll': 'Переместить ВЕСЬ топ-10 в корзину?',
+    'toast.cleaned': '✅ {n} писем перемещено в корзину',
+    'toast.cleanAllPartial': '⚠️ {removed} перемещено; {failed} не удалось'
+  },
+  zh: {
+    'subtitle': '🔐 已通过 OAuth2 连接到 Gmail',
+    'auth.title': '🔒 连接到 Gmail',
+    'auth.desc': '授权访问你的 Gmail 账号，以分析最占满收件箱的发件人并将其邮件移至垃圾箱。',
+    'auth.loginBtn': '使用 Google 登录',
+    'auth.note': '🔐 Google 官方 OAuth2 身份验证<br>🗑️ 读取并将你的邮件移至垃圾箱的权限',
+    'results.title': '🏆 前 10 名发件人',
+    'btn.cleanAll': '🗑️ 清理前 10 名',
+    'btn.logout': '🚪 退出',
+    'stat.analyzed': '已分析邮件',
+    'stat.space': '总空间',
+    'stat.senders': '独立发件人',
+    'stat.top10': '前 10 名（邮件）',
+    'list.title': '📬 邮件最多的发件人',
+    'btn.clean': '清理',
+    'toast.authSuccess': '✅ 身份验证成功！',
+    'toast.authError': '❌ 身份验证出错，请重试。',
+    'toast.sessionExpired': '🔒 会话已过期，请重新登录。',
+    'toast.logoutError': '❌ 退出时出错',
+    'toast.loadError': '❌ 加载数据出错',
+    'toast.analyzing': '🔍 正在分析你的邮箱...',
+    'toast.analyzePartial': '✅ 部分分析：{ok} 成功，{failed} 失败',
+    'toast.analyzeDone': '✅ 分析完成！',
+    'toast.analyzeError': '❌ 分析出错',
+    'confirm.cleanSender': '将来自 {sender} 的邮件移至垃圾箱？',
+    'confirm.cleanAll': '将全部前 10 名移至垃圾箱？',
+    'toast.cleaned': '✅ 已将 {n} 封邮件移至垃圾箱',
+    'toast.cleanAllPartial': '⚠️ 已移动 {removed}；{failed} 失败'
   }
 };
 
 function t(key: string, params: Record<string, string | number> = {}): string {
-  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.pt;
-  let str = dict[key] ?? TRANSLATIONS.pt[key] ?? key;
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  let str = dict[key] ?? TRANSLATIONS.en[key] ?? key;
   for (const [k, v] of Object.entries(params)) {
     str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
   }
@@ -154,7 +241,7 @@ function t(key: string, params: Record<string, string | number> = {}): string {
 }
 
 function applyLanguage(lang: string): void {
-  const safeLang: Lang = (lang in TRANSLATIONS ? lang : 'pt') as Lang;
+  const safeLang: Lang = (lang in TRANSLATIONS ? lang : 'en') as Lang;
   currentLang = safeLang;
   localStorage.setItem('lang', safeLang);
   document.documentElement.lang = LOCALES[safeLang];
@@ -202,9 +289,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  // Default language is English; a previously chosen language is restored if present.
   const saved = localStorage.getItem('lang');
-  const browser = (navigator.language || 'pt').slice(0, 2);
-  applyLanguage(saved || (browser in TRANSLATIONS ? browser : 'pt'));
+  applyLanguage(saved && saved in TRANSLATIONS ? saved : 'en');
 
   const params = new URLSearchParams(window.location.search);
 
@@ -447,7 +534,7 @@ function toast(msg: string): void {
   setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-function formatNumber(n: number): string { return Number(n).toLocaleString(LOCALES[currentLang] || 'pt-BR'); }
+function formatNumber(n: number): string { return Number(n).toLocaleString(LOCALES[currentLang] || 'en-US'); }
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' B';

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -19,35 +19,38 @@
       <div class="logo">G</div>
       <div>
         <h1>Gmail Cleaner Buddy</h1>
-        <div class="subtitle" data-i18n="subtitle">🔐 Conectado ao Gmail via OAuth2</div>
+        <div class="subtitle" data-i18n="subtitle">🔐 Connected to Gmail via OAuth2</div>
       </div>
     </div>
     <div class="lang-wrapper" id="langWrapper">
       <button class="lang-btn" id="langBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
-        <span id="langFlag" class="fi fi-br"></span>
-        <span id="langLabel">PT</span>
+        <span id="langFlag" class="fi fi-us"></span>
+        <span id="langLabel">EN</span>
         <span class="lang-chevron">▾</span>
       </button>
       <ul class="lang-menu" id="langMenu" role="listbox">
-        <li data-lang="pt" role="option"><span class="fi fi-br"></span> Português</li>
         <li data-lang="en" role="option"><span class="fi fi-us"></span> English</li>
+        <li data-lang="pt" role="option"><span class="fi fi-br"></span> Português</li>
         <li data-lang="es" role="option"><span class="fi fi-es"></span> Español</li>
         <li data-lang="fr" role="option"><span class="fi fi-fr"></span> Français</li>
+        <li data-lang="it" role="option"><span class="fi fi-it"></span> Italiano</li>
+        <li data-lang="ru" role="option"><span class="fi fi-ru"></span> Русский</li>
+        <li data-lang="zh" role="option"><span class="fi fi-cn"></span> 中文</li>
       </ul>
     </div>
   </div>
 
   <!-- AUTH -->
   <div class="card auth" id="authScreen">
-    <h2 data-i18n="auth.title">🔒 Conectar ao Gmail</h2>
-    <p data-i18n="auth.desc">Autorize o acesso à sua conta Gmail para analisar os remetentes que mais lotam sua caixa e movê-los para a lixeira.</p>
+    <h2 data-i18n="auth.title">🔒 Connect to Gmail</h2>
+    <p data-i18n="auth.desc">Authorize access to your Gmail account to analyze the senders that clutter your inbox the most and move them to the trash.</p>
     <button id="loginButton" class="btn btn-google" type="button">
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy43eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PHBhdGggZD0iTTAgMGgxOHYxOEgweiIvPjwvZz48L3N2Zz4=" alt="Google">
-      <span data-i18n="auth.loginBtn">Entrar com Google</span>
+      <span data-i18n="auth.loginBtn">Sign in with Google</span>
     </button>
     <p class="auth-note" data-i18n-html="auth.note">
-      🔐 Autenticação OAuth2 oficial do Google<br>
-      🗑️ Permissão para ler e mover seus emails para a lixeira
+      🔐 Official Google OAuth2 authentication<br>
+      🗑️ Permission to read and move your emails to the trash
     </p>
   </div>
 
@@ -55,27 +58,27 @@
   <div class="card results" id="resultsScreen">
     <div class="panel-head">
       <div>
-        <h2 data-i18n="results.title">🏆 Top 10 remetentes</h2>
+        <h2 data-i18n="results.title">🏆 Top 10 senders</h2>
         <p id="userEmail"></p>
       </div>
       <div class="actions">
-        <button id="cleanAllButton" class="btn danger" type="button" data-i18n="btn.cleanAll">🗑️ Limpar Top 10</button>
-        <button id="logoutButton" class="btn secondary" type="button" data-i18n="btn.logout">🚪 Sair</button>
+        <button id="cleanAllButton" class="btn danger" type="button" data-i18n="btn.cleanAll">🗑️ Clean Top 10</button>
+        <button id="logoutButton" class="btn secondary" type="button" data-i18n="btn.logout">🚪 Sign out</button>
       </div>
     </div>
 
     <div class="stats">
       <div class="stat">
         <strong id="totalEmails">0</strong>
-        <span data-i18n="stat.analyzed">Emails analisados</span>
+        <span data-i18n="stat.analyzed">Emails analyzed</span>
       </div>
       <div class="stat">
         <strong id="totalSize">0</strong>
-        <span data-i18n="stat.space">Espaço total</span>
+        <span data-i18n="stat.space">Total space</span>
       </div>
       <div class="stat">
         <strong id="uniqueSenders">0</strong>
-        <span data-i18n="stat.senders">Remetentes únicos</span>
+        <span data-i18n="stat.senders">Unique senders</span>
       </div>
       <div class="stat">
         <strong id="top10Count">0</strong>
@@ -85,7 +88,7 @@
 
     <div class="content">
       <div class="list">
-        <div class="list-title" data-i18n="list.title">📬 Remetentes com mais emails</div>
+        <div class="list-title" data-i18n="list.title">📬 Senders with the most emails</div>
         <div id="offendersList"></div>
       </div>
     </div>
