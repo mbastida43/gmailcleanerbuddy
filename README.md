@@ -1,5 +1,9 @@
 # 🚀 Gmail Cleaner Buddy — OAuth2 Configuration
 
+**🌐 [Project overview page](https://mbastida43.github.io/gmailcleanerbuddy/)** —
+what the app does, how it works, how it is secured and where its limits are,
+in all 7 languages.
+
 Connect any Gmail account via OAuth2 (the same Google account picker that
 appears when you open gmail.com), see the Top 10 senders taking up the most
 space in your inbox, and move their emails to the trash.
@@ -27,6 +31,10 @@ Open http://localhost:3000, click Sign in with Google, authorize access, and the
 
 # 🚀 Gmail Cleaner Buddy — Configuração OAuth2
 
+**🌐 [Página de visão geral do projeto](https://mbastida43.github.io/gmailcleanerbuddy/)** —
+o que o app faz, como funciona, como é protegido e onde estão seus limites,
+nos 7 idiomas.
+
 Conecte qualquer conta Gmail via OAuth2 (o mesmo seletor de contas do Google
 que aparece ao abrir gmail.com), veja os Top 10 remetentes que mais ocupam
 sua caixa e mova os emails deles para a lixeira.
@@ -52,6 +60,11 @@ Abra http://localhost:3000, clique em Iniciar sessão com o Google, autorize o a
 ---
 
 # 🚀 Gmail Cleaner Buddy — Configuración OAuth2
+
+**🌐 [Página de resumen del proyecto](https://mbastida43.github.io/gmailcleanerbuddy/)** —
+qué hace la app, cómo funciona, cómo está protegida y dónde están sus límites,
+en los 7 idiomas.
+
 ## 📋 Requisitos previos
 
 Aplicación en fase de pruebas.
@@ -75,6 +88,10 @@ Abre http://localhost:3000, haz clic en Iniciar sesión con Google, autoriza el 
 
 # 🚀 Gmail Cleaner Buddy — Configuration OAuth2
 
+**🌐 [Page de présentation du projet](https://mbastida43.github.io/gmailcleanerbuddy/)** —
+ce que fait l'app, comment elle fonctionne, comment elle est sécurisée et où
+sont ses limites, dans les 7 langues.
+
 ## 📋 Prérequis
 
 Application en phase de test.
@@ -96,6 +113,10 @@ Ouvrez http://localhost:3000, cliquez sur Se connecter avec Google, autorisez l�
 ---
 
 # 🚀 Gmail Cleaner Buddy — Configurazione OAuth2
+
+**🌐 [Pagina di panoramica del progetto](https://mbastida43.github.io/gmailcleanerbuddy/)** —
+cosa fa l'app, come funziona, come è protetta e dove sono i suoi limiti,
+in tutte e 7 le lingue.
 
 Collega qualsiasi account Gmail tramite OAuth2 (lo stesso selettore di account
 Google che appare quando apri gmail.com), visualizza i Top 10 mittenti che
@@ -123,6 +144,10 @@ Apri http://localhost:3000, clicca su Accedi con Google, autorizza l'accesso, e 
 
 # 🚀 Gmail Cleaner Buddy — Настройка OAuth2
 
+**🌐 [Страница обзора проекта](https://mbastida43.github.io/gmailcleanerbuddy/)** —
+что делает приложение, как оно работает, как защищено и где его ограничения,
+на всех 7 языках.
+
 Подключите любой аккаунт Gmail через OAuth2 (тот же выбор аккаунта Google,
 который появляется при открытии gmail.com), посмотрите 10 главных
 отправителей, занимающих больше всего места в вашем почтовом ящике, и
@@ -149,6 +174,9 @@ npm start   # Запускает приложение
 ---
 
 # 🚀 Gmail Cleaner Buddy — OAuth2 配置
+
+**🌐 [项目概览页面](https://mbastida43.github.io/gmailcleanerbuddy/)** —
+应用的功能、工作原理、安全措施以及它的限制，提供全部 7 种语言。
 
 通过 OAuth2 连接任意 Gmail 账号（与打开 gmail.com 时出现的 Google 账号选择器
 相同），查看占用收件箱空间最多的前 10 名发件人，并将他们的邮件移至垃圾箱。
