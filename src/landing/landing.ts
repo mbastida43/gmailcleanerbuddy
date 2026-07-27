@@ -1,5 +1,8 @@
 // GitHub Pages landing page — language switcher.
-// Authored in TypeScript; compiled to docs/landing.js (tsconfig.landing.json).
+// Authored in TypeScript; compiled to ./landing.js (tsconfig.landing.json).
+// The compiled file sits at the repo root because GitHub Pages publishes from
+// there, so index.html is the site's home page — hence it is committed, unlike
+// the gitignored public/app.js.
 // Default language: English, with a cascading menu for all README languages.
 
 interface LangEntry {

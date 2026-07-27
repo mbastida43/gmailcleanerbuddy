@@ -3,11 +3,14 @@
     "target": "ES2017",
     "lib": ["DOM", "ES2017"],
     "module": "ES2022",
-    "outDir": "docs",
+    "outDir": ".",
     "rootDir": "src/landing",
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/landing/**/*.ts"]
+  "include": ["src/landing/**/*.ts"],
+  // "exclude" defaults to the outDir, which here is the whole repo — spelling it
+  // out keeps tsc from excluding its own inputs.
+  "exclude": ["node_modules"]
 }
