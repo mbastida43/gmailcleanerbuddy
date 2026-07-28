@@ -285,8 +285,40 @@ app.get('/api/user', apiLimiter, requireAuth, async (req: Request, res: Response
   }
 });
 
+// Lê um inteiro positivo do ambiente. Valor ausente, não numérico, zero ou
+// negativo cai no padrão com um aviso — configuração errada não deve derrubar
+// o servidor nem, pior, virar um limite silenciosamente absurdo.
+const MAX_ANALYZE_CEILING = 25000;
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallback;
+
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    console.warn(`⚠️  ${name}="${raw}" inválido (use um inteiro > 0). Usando ${fallback}.`);
+    return fallback;
+  }
+  if (parsed > MAX_ANALYZE_CEILING) {
+    console.warn(`⚠️  ${name}=${parsed} acima do teto de ${MAX_ANALYZE_CEILING}. Usando o teto.`);
+    return MAX_ANALYZE_CEILING;
+  }
+  return parsed;
+}
+
 // 6. Analisar caixa de entrada (Top Offenders)
-const MAX_ANALYZE = 500;
+//
+// Quantas mensagens recentes entram na amostra que elege os candidatos a
+// "ofensor". Aumentar NÃO revela remetentes escondidos: com ritmos estáveis,
+// uma janela maior multiplica todo mundo pelo mesmo fator e o ranking se
+// mantém. O que se ganha é estabilidade — numa janela curta, uma campanha
+// pontual de uma loja distorce o resultado; numa janela maior, o que aparece
+// é hábito. O ponto cego que permanece é o remetente que despejou muito no
+// passado e parou: esse não volta por tamanho de amostra nenhum.
+//
+// O custo é linear e tem piso: a cota do Gmail permite ~50 messages.get por
+// segundo, então o tempo mínimo é MAX_ANALYZE/50 segundos (1000 ≈ 20s).
+const MAX_ANALYZE = readPositiveIntEnv('MAX_ANALYZE', 1000);
 
 interface Offender {
   domain: string;
