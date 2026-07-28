@@ -183,7 +183,11 @@ app.get('/auth/google', authLimiter, (req: Request, res: Response) => {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'online',
     scope: ['https://www.googleapis.com/auth/gmail.modify'],
-    state
+    state,
+    // Sem isto o Google reaproveita a conta já logada no navegador e nem exibe
+    // o seletor — num app que APAGA e-mails, entrar na caixa errada sem perceber
+    // é um estrago silencioso. Forçar a escolha a cada login é barato.
+    prompt: 'select_account'
   });
 
   res.redirect(authUrl);
@@ -290,6 +294,11 @@ interface Offender {
   sampleCount: number;  // contagem dentro da amostra analisada — usada só como fallback
   size: number;
   category: string;
+  // Conta do próprio usuário. Continua na lista (esconder só geraria a dúvida
+  // "cadê minhas mensagens?"), mas com o botão de limpar desabilitado. O
+  // /api/clean recusa esse endereço de qualquer forma — a interface comunica,
+  // o servidor garante.
+  isProtected: boolean;
 }
 
 interface AnalyzeResponse {
@@ -304,6 +313,12 @@ interface AnalyzeResponse {
 app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Response) => {
   try {
     const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
+
+    // A listagem abaixo não filtra por pasta, então traz também os enviados —
+    // por isso o próprio dono da conta costuma liderar a lista. Ele permanece
+    // visível (some sem explicação seria pior), mas marcado como isProtected
+    // para a interface desabilitar o botão de limpar.
+    const ownEmail = await getOwnEmail(gmail);
 
     async function fetchMessagePage(token: string | undefined) {
       return gmail.users.messages.list({
@@ -378,7 +393,8 @@ app.get('/api/analyze', apiLimiter, requireAuth, async (req: Request, res: Respo
       count: senderCounts[email],
       sampleCount: senderCounts[email],
       size: senderSizes[email] || 0,
-      category: senderCategories[email]
+      category: senderCategories[email],
+      isProtected: !!ownEmail && email === ownEmail
     }));
     offenders.sort((a, b) => b.count - a.count);
 
@@ -446,6 +462,18 @@ app.post('/api/clean', apiLimiter, requireAuth, async (req: Request, res: Respon
 
   try {
     const gmail = google.gmail({ version: 'v1', auth: getAuthClient(req) });
+
+    // Trava de segurança: limpar o próprio endereço esvaziaria a pasta de
+    // enviados — incluindo e-mails que o usuário manda para si mesmo para
+    // guardar. A interface já desabilita o botão nessa linha; isto cobre o caso
+    // de a requisição chegar por outro caminho (tela em cache, chamada manual).
+    const ownEmail = await getOwnEmail(gmail);
+    if (ownEmail && sanitizedSender.toLowerCase() === ownEmail) {
+      res.status(400).json({
+        error: 'Não é possível limpar o seu próprio endereço — isso moveria seus e-mails enviados para a lixeira.'
+      });
+      return;
+    }
 
     // Mesma busca usada na contagem (entre aspas, evita injeção de operadores).
     // Pagina até o fim para coletar TODOS os ids, não só os 200 primeiros.
@@ -541,6 +569,19 @@ type Gmail = ReturnType<typeof google.gmail>;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Endereço da conta autenticada, em minúsculas. Devolve '' se o perfil falhar —
+// nesse caso as travas que dependem dele apenas não se aplicam, em vez de
+// derrubar a requisição inteira.
+async function getOwnEmail(gmail: Gmail): Promise<string> {
+  try {
+    const profile = await gmail.users.getProfile({ userId: 'me' });
+    return (profile.data.emailAddress || '').trim().toLowerCase();
+  } catch (err) {
+    if (isAuthError(err)) throw err;
+    return '';
+  }
 }
 
 // Conta threads exatas via paginação — mesma semântica do Gmail UI (conversas,

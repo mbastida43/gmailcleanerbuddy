@@ -3,6 +3,7 @@ interface Offender {
   count: number;
   size: number;
   category: string;
+  isProtected?: boolean;
 }
 
 interface AnalyzeData {
@@ -53,7 +54,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanSender': 'Mover emails de {sender} para a lixeira?',
     'confirm.cleanAll': 'Mover TODOS os Top 10 para a lixeira?',
     'toast.cleaned': '✅ {n} emails movidos para a lixeira',
-    'toast.cleanAllPartial': '⚠️ {removed} movidos; {failed} falharam'
+    'toast.cleanAllPartial': '⚠️ {removed} movidos; {failed} falharam',
+    'protected.tooltip': 'Sua própria conta — protegida contra limpeza'
   },
   en: {
     'subtitle': '🔐 Connected to Gmail via OAuth2',
@@ -82,7 +84,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanSender': 'Move emails from {sender} to the trash?',
     'confirm.cleanAll': 'Move ALL Top 10 to the trash?',
     'toast.cleaned': '✅ {n} emails moved to the trash',
-    'toast.cleanAllPartial': '⚠️ {removed} moved; {failed} failed'
+    'toast.cleanAllPartial': '⚠️ {removed} moved; {failed} failed',
+    'protected.tooltip': 'Your own account — protected from cleaning'
   },
   es: {
     'subtitle': '🔐 Conectado a Gmail vía OAuth2',
@@ -111,7 +114,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanSender': '¿Mover los correos de {sender} a la papelera?',
     'confirm.cleanAll': '¿Mover TODO el Top 10 a la papelera?',
     'toast.cleaned': '✅ {n} correos movidos a la papelera',
-    'toast.cleanAllPartial': '⚠️ {removed} movidos; {failed} fallaron'
+    'toast.cleanAllPartial': '⚠️ {removed} movidos; {failed} fallaron',
+    'protected.tooltip': 'Tu propia cuenta: protegida contra la limpieza'
   },
   fr: {
     'subtitle': '🔐 Connecté à Gmail via OAuth2',
@@ -140,7 +144,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanSender': 'Déplacer les e-mails de {sender} vers la corbeille ?',
     'confirm.cleanAll': 'Déplacer TOUT le Top 10 vers la corbeille ?',
     'toast.cleaned': '✅ {n} e-mails déplacés vers la corbeille',
-    'toast.cleanAllPartial': '⚠️ {removed} déplacés ; {failed} échoués'
+    'toast.cleanAllPartial': '⚠️ {removed} déplacés ; {failed} échoués',
+    'protected.tooltip': 'Votre propre compte — protégé du nettoyage'
   },
   it: {
     'subtitle': '🔐 Connesso a Gmail tramite OAuth2',
@@ -169,7 +174,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanSender': 'Spostare le email di {sender} nel cestino?',
     'confirm.cleanAll': 'Spostare TUTTI i Top 10 nel cestino?',
     'toast.cleaned': '✅ {n} email spostate nel cestino',
-    'toast.cleanAllPartial': '⚠️ {removed} spostate; {failed} non riuscite'
+    'toast.cleanAllPartial': '⚠️ {removed} spostate; {failed} non riuscite',
+    'protected.tooltip': 'Il tuo account — protetto dalla pulizia'
   },
   ru: {
     'subtitle': '🔐 Подключено к Gmail через OAuth2',
@@ -198,7 +204,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanSender': 'Переместить письма от {sender} в корзину?',
     'confirm.cleanAll': 'Переместить ВЕСЬ топ-10 в корзину?',
     'toast.cleaned': '✅ {n} писем перемещено в корзину',
-    'toast.cleanAllPartial': '⚠️ {removed} перемещено; {failed} не удалось'
+    'toast.cleanAllPartial': '⚠️ {removed} перемещено; {failed} не удалось',
+    'protected.tooltip': 'Ваш собственный аккаунт — защищён от очистки'
   },
   zh: {
     'subtitle': '🔐 已通过 OAuth2 连接到 Gmail',
@@ -227,7 +234,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'confirm.cleanSender': '将来自 {sender} 的邮件移至垃圾箱？',
     'confirm.cleanAll': '将全部前 10 名移至垃圾箱？',
     'toast.cleaned': '✅ 已将 {n} 封邮件移至垃圾箱',
-    'toast.cleanAllPartial': '⚠️ 已移动 {removed}；{failed} 失败'
+    'toast.cleanAllPartial': '⚠️ 已移动 {removed}；{failed} 失败',
+    'protected.tooltip': '您自己的账户 — 已受保护，不会被清理'
   }
 };
 
@@ -430,6 +438,16 @@ function renderResults(data: AnalyzeData): void {
     const domainEl = document.createElement('div');
     domainEl.className = 'domain';
     domainEl.textContent = item.domain;
+    if (item.isProtected) {
+      // Cadeado depois do endereço: sinaliza "protegido", não "removido" —
+      // por isso um ícone, e não texto taxado.
+      const lock = document.createElement('span');
+      lock.className = 'lock';
+      lock.textContent = ' 🔒';
+      lock.title = t('protected.tooltip');
+      lock.setAttribute('aria-label', t('protected.tooltip'));
+      domainEl.appendChild(lock);
+    }
     const categoryEl = document.createElement('div');
     categoryEl.className = 'cat';
     categoryEl.textContent = item.category;
@@ -449,7 +467,13 @@ function renderResults(data: AnalyzeData): void {
     button.type = 'button';
     button.className = 'btn-clean-single';
     button.textContent = t('btn.clean');
-    button.addEventListener('click', () => cleanSender(item.domain));
+    if (item.isProtected) {
+      button.disabled = true;
+      button.title = t('protected.tooltip');
+      button.setAttribute('aria-disabled', 'true');
+    } else {
+      button.addEventListener('click', () => cleanSender(item.domain));
+    }
 
     row.appendChild(rank);
     row.appendChild(details);
@@ -493,8 +517,10 @@ async function cleanAll(): Promise<void> {
   let totalRemoved = 0;
   let totalFailed = 0;
 
-  // Cópia da lista: removeSenderLocally mexe no top10 durante o loop
-  const targets = [...currentData.top10];
+  // Cópia da lista: removeSenderLocally mexe no top10 durante o loop.
+  // A conta do próprio usuário fica de fora: o servidor recusaria com 400 e o
+  // "Limpar Top 10" acabaria reportando uma falha que não é falha.
+  const targets = currentData.top10.filter((o) => !o.isProtected);
   for (const item of targets) {
     try {
       const res = await apiFetch('/api/clean', {
