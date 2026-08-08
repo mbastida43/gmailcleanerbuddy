@@ -35,6 +35,7 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
-      # https://app.marlonbastida.com.br/auth/google/callback
+      # https://gmailcleanerbuddyapp.marlonbastida.com.br/auth/google/callback
+      # Precisa bater EXATAMENTE com o URI cadastrado no Google Cloud Console.
       - key: GOOGLE_REDIRECT_URI
         sync: false
