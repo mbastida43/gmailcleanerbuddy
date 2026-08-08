@@ -1,0 +1,40 @@
+# Blueprint do Render — descreve o serviço inteiro, para não depender de
+# formulário preenchido à mão. O Render lê este arquivo ao conectar o repo.
+#
+# As três variáveis com `sync: false` NÃO ficam aqui de propósito: são segredo
+# (ou dependem do domínio final) e você as digita no painel do Render.
+services:
+  - type: web
+    name: gmail-cleaner-buddy
+    runtime: node
+    plan: free
+    # Virginia é a região gratuita mais próxima do Brasil (~120ms contra ~180ms
+    # do Oregon). Não existe região gratuita na América do Sul.
+    region: virginia
+    branch: main
+
+    # `npm ci` (e não `install`) para respeitar o package-lock.json.
+    # O build gera dist/ e public/app.js, que são gitignored de propósito.
+    buildCommand: npm ci && npm run build
+    # Chamamos o dist direto em vez de `npm start`: o `prestart` recompilaria
+    # tudo a cada boot, atrasando o cold start do plano free sem necessidade.
+    startCommand: node dist/server.js
+    healthCheckPath: /
+
+    envVars:
+      # Liga trust proxy, cookie Secure, HSTS e o bind em 0.0.0.0 no server.ts.
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      # Gerado pelo Render (256 bits, base64) — nunca passa por este repo nem
+      # pela sua máquina. O server.ts recusa iniciar com menos de 32 chars.
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # https://app.marlonbastida.com.br/auth/google/callback
+      - key: GOOGLE_REDIRECT_URI
+        sync: false

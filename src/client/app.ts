@@ -313,7 +313,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   } else {
     await checkAuth();
   }
+
+  registerServiceWorker();
 });
+
+// PWA: o service worker é o que torna o app instalável e permite empacotá-lo
+// como TWA na Play Store. Registrado por último, e sem await, para nunca
+// atrasar o fluxo de login. Só roda em HTTPS (ou localhost) — em http:// puro
+// `navigator.serviceWorker` nem existe, daí a checagem.
+function registerServiceWorker(): void {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js').catch((error) => {
+    console.warn('Service worker não registrado:', error);
+  });
+}
 
 async function checkAuth(): Promise<void> {
   try {

@@ -92,6 +92,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use(express.json({ limit: '10kb' }));
+
+// Digital Asset Links: é o arquivo que prova ao Android que este site e o APK
+// da Play Store são do mesmo dono — sem ele a TWA abre com a barra de URL do
+// Chrome por cima do app. Precisa de um static próprio porque express.static
+// trata qualquer caminho iniciado por ponto como inexistente.
+app.use('/.well-known', express.static('public/.well-known'));
+
 app.use(express.static('public'));
 
 // Respostas de auth/API carregam dados sensíveis (perfil, contagens) e não
@@ -688,8 +695,14 @@ app.use((err: Error & { type?: string }, req: Request, res: Response, next: Next
 });
 
 // ========== SERVIDOR ==========
-const server = app.listen(PORT, 'localhost', () => {
-  console.log(`\n🚀 Gmail Cleaner Buddy rodando em http://localhost:${PORT}\n`);
+// Em desenvolvimento ficamos presos a localhost de propósito: nada de expor a
+// máquina do dev na rede local. Em produção (Render, Fly, Cloud Run…) o proxy
+// da plataforma chega por outra interface, então o bind precisa ser 0.0.0.0 —
+// com 'localhost' o health check da plataforma falha e o deploy nunca sobe.
+const HOST = isProd ? '0.0.0.0' : 'localhost';
+
+const server = app.listen(PORT, HOST, () => {
+  console.log(`\n🚀 Gmail Cleaner Buddy rodando em http://${HOST}:${PORT}\n`);
 });
 
 // Erro ao subir o servidor (ex.: porta ocupada) com mensagem amigável

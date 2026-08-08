@@ -31,3 +31,11 @@ Thumbs.db
 /dist/
 /public/app.js
 /public/app.js.map
+
+# Empacotamento Android (TWA/Bubblewrap) — gerado, e a chave de assinatura
+# NUNCA pode ser versionada: quem tem o keystore publica updates no seu nome.
+/android/
+*.keystore
+*.jks
+*.aab
+*.apk
