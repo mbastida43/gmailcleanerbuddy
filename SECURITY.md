@@ -161,7 +161,7 @@ repository. Do not disclose publicly before a fix is available.
 2. **CSP with `'unsafe-inline'` for styles**: the CSS is inline in the HTML.
    Migrating to an external file would allow removing this exception.
 3. **Refresh token in the session**: tokens live only in the session (expire
-   in 24h). If the application evolves toward persistence, encrypt the tokens
+   after 8h idle; logout revokes them). If the application evolves toward persistence, encrypt the tokens
    at rest.
 
 ---
@@ -367,7 +367,7 @@ repositório. Não divulgue publicamente antes da correção.
 2. **CSP com `'unsafe-inline'` para estilos**: o CSS está inline no HTML.
    Migrar para arquivo externo permitiria remover essa exceção.
 3. **Refresh token na sessão**: os tokens vivem apenas na sessão (expiram em
-   24h). Se a aplicação evoluir para persistência, criptografe os tokens em
+   8h sem uso; o logout os revoga). Se a aplicação evoluir para persistência, criptografe os tokens em
    repouso.
 
 ---

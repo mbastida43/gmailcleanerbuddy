@@ -120,11 +120,12 @@ app.use(session({
     // de accounts.google.com — com 'strict' o navegador omite o cookie e o
     // state salvo na sessão se perde. CSRF segue coberto pelo verifySameOrigin.
     sameSite: 'lax',
-    // 1h, alinhado à vida do access token do Google (acesso 'online', sem
-    // refresh token): cookie mais longo só ampliaria a janela de exposição
-    // em máquina compartilhada sem ganho de usabilidade.
-    maxAge: 60 * 60 * 1000
-  }
+    // 8h de INATIVIDADE (rolling renova o prazo a cada requisição): com o
+    // refresh token o access token se renova sozinho, então a sessão só cai
+    // se o usuário ficar 8h sem usar o app — nunca no meio de uma análise.
+    maxAge: 8 * 60 * 60 * 1000
+  },
+  rolling: true
 }));
 
 // ========== CSRF (defesa em profundidade via verificação de Origin) ==========
@@ -168,6 +169,13 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 function getAuthClient(req: Request): OAuth2Client {
   const oauth2Client = createOAuthClient();
   oauth2Client.setCredentials(req.session.tokens!);
+  // A lib renova o access token sozinha quando ele vence (até no meio de uma
+  // análise). O token novo precisa voltar para a sessão, senão toda requisição
+  // seguinte pagaria uma renovação. O Google não reenvia o refresh_token na
+  // renovação, por isso o merge em vez de substituir.
+  oauth2Client.on('tokens', (tokens) => {
+    req.session.tokens = { ...req.session.tokens, ...tokens };
+  });
   return oauth2Client;
 }
 
@@ -181,20 +189,22 @@ app.get('/auth/google', authLimiter, (req: Request, res: Response) => {
   const state = crypto.randomBytes(32).toString('hex');
   req.session.oauthState = state;
 
-  // Minimização de credenciais (segurança): pedimos acesso 'online', então o
-  // Google emite APENAS um access token de curta duração (~1h) e NENHUM refresh
-  // token. Como o app nunca usa refresh token, não faz sentido guardar uma
-  // credencial de longa duração — se a store de sessão vazar, o dano expira em
-  // ~1h em vez de ser renovável indefinidamente. A sessão expira naturalmente e
-  // o usuário reautentica.
+  // Acesso 'offline' = o Google entrega também um refresh token, e o access
+  // token (~1h) se renova sem o usuário intervir. Troca consciente: antes era
+  // 'online' (nenhuma credencial longa), mas a sessão caía 1h após o login,
+  // inclusive no meio de uma análise. O refresh token vive só na sessão (store em
+  // memória do processo — nunca vai para o navegador nem para disco) e é revogado
+  // no logout.
   const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'online',
+    access_type: 'offline',
     scope: ['https://www.googleapis.com/auth/gmail.modify'],
     state,
-    // Sem isto o Google reaproveita a conta já logada no navegador e nem exibe
-    // o seletor — num app que APAGA e-mails, entrar na caixa errada sem perceber
-    // é um estrago silencioso. Forçar a escolha a cada login é barato.
-    prompt: 'select_account'
+    // select_account: sem isto o Google reaproveita a conta já logada e nem
+    // exibe o seletor — num app que APAGA e-mails, entrar na caixa errada sem
+    // perceber é um estrago silencioso.
+    // consent: o Google só devolve refresh token quando a tela de permissão
+    // aparece; sem isto, do 2º login em diante ele viria vazio.
+    prompt: 'select_account consent'
   });
 
   res.redirect(authUrl);
@@ -256,8 +266,11 @@ app.get('/auth/status', apiLimiter, (req: Request, res: Response) => {
 app.post('/auth/logout', requireAuth, async (req: Request, res: Response) => {
   try {
     const oauth2Client = getAuthClient(req);
-    if (req.session.tokens?.access_token) {
-      await oauth2Client.revokeToken(req.session.tokens.access_token).catch(() => {});
+    // Revogar o refresh token derruba a concessão inteira (inclusive access
+    // tokens já emitidos); o access token só é usado se não houver refresh.
+    const token = req.session.tokens?.refresh_token || req.session.tokens?.access_token;
+    if (token) {
+      await oauth2Client.revokeToken(token).catch(() => {});
     }
   } catch (error: any) {
     console.error('Erro ao revogar token:', error?.message);
