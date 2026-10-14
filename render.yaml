@@ -39,3 +39,24 @@ services:
       # Precisa bater EXATAMENTE com o URI cadastrado no Google Cloud Console.
       - key: GOOGLE_REDIRECT_URI
         sync: false
+      # Store das sessões (ver server.ts). Sem ele o login cairia a cada vez que
+      # o plano free adormece o serviço web ou a cada deploy.
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: gmail-cleaner-buddy-sessions
+          property: connectionString
+
+  # Key Value (Redis) gratuito: 1 por workspace, dados só em memória — se o
+  # Render reiniciar a instância, todos precisam logar de novo (raro). Sobe
+  # para um plano pago (persistência em disco) se isso incomodar.
+  - type: keyvalue
+    name: gmail-cleaner-buddy-sessions
+    plan: free
+    region: virginia
+    # Lista vazia = nenhum acesso pela internet; só a rede privada do Render
+    # (o serviço web) alcança o Redis — é ali que ficam os refresh tokens.
+    ipAllowList: []
+    # Toda sessão tem TTL; se a memória encher, descarta as mais próximas de
+    # expirar em vez de recusar logins novos.
+    maxmemoryPolicy: volatile-ttl

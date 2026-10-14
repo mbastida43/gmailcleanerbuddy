@@ -4,6 +4,8 @@ import session from 'express-session';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
+import { RedisStore } from 'connect-redis';
+import { createClient } from 'redis';
 import { OAuth2Client, exchangeCodeForTokens } from './types/google';
 import 'dotenv/config';
 
@@ -108,7 +110,25 @@ app.use(['/api', '/auth'], (req: Request, res: Response, next: NextFunction) => 
   next();
 });
 
+// Sessões no Redis quando REDIS_URL existe (produção no Render). Sem isso a
+// sessão vive na memória do processo e some a cada deploy e a cada vez que o
+// plano free do Render adormece o serviço (15 min sem tráfego) — o usuário
+// teria de relogar mesmo dentro das 8h. Em desenvolvimento, sem REDIS_URL,
+// cai no MemoryStore padrão: nada de exigir Redis na máquina do dev.
+let sessionStore: session.Store | undefined;
+if (process.env.REDIS_URL) {
+  const redisClient = createClient({ url: process.env.REDIS_URL });
+  // Sem listener de 'error' uma queda do Redis derrubaria o processo inteiro;
+  // o cliente reconecta sozinho e enfileira comandos até lá.
+  redisClient.on('error', (err) => console.error('Erro no Redis:', err.code || err.message));
+  redisClient.connect().catch((err) => console.error('Falha ao conectar no Redis:', err.code || err.message));
+  sessionStore = new RedisStore({ client: redisClient, prefix: 'gcb:sess:' });
+} else if (isProd) {
+  console.warn('⚠️  REDIS_URL ausente: sessões em memória — somem a cada reinício do serviço.');
+}
+
 app.use(session({
+  store: sessionStore,
   name: 'gcb.sid',
   secret: process.env.SESSION_SECRET!,
   resave: false,

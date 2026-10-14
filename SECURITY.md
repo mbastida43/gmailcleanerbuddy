@@ -154,10 +154,11 @@ repository. Do not disclose publicly before a fix is available.
 
 ## Known limitations / next steps
 
-1. **In-memory session storage**: `express-session` uses MemoryStore by
-   default, which is not recommended for production (leaks memory and does not
-   scale horizontally — Twelve-Factor: VI. Processes). For production,
-   configure an external store (e.g., `connect-redis`).
+1. **Session storage**: with `REDIS_URL` set (production on Render) sessions
+   live in Redis via `connect-redis`; without it, in development, they fall
+   back to MemoryStore. The free Render Key Value keeps data in memory only, so
+   an instance restart signs everyone out and the refresh tokens are not
+   encrypted at rest — move to a paid plan and encrypt them if that matters.
 2. **CSP with `'unsafe-inline'` for styles**: the CSS is inline in the HTML.
    Migrating to an external file would allow removing this exception.
 3. **Refresh token in the session**: tokens live only in the session (expire
@@ -360,10 +361,12 @@ repositório. Não divulgue publicamente antes da correção.
 
 ## Limitações conhecidas / próximos passos
 
-1. **Armazenamento de sessão em memória**: `express-session` usa MemoryStore
-   por padrão, que não é recomendado para produção (vaza memória e não escala
-   horizontalmente — Twelve-Factor: VI. Processes). Para produção, configure
-   um store externo (ex.: `connect-redis`).
+1. **Armazenamento de sessão**: com `REDIS_URL` definida (produção no Render)
+   as sessões ficam no Redis via `connect-redis`; sem ela, em desenvolvimento,
+   caem no MemoryStore. O Key Value gratuito do Render guarda dados só em
+   memória, então um reinício da instância desloga todos e os refresh tokens
+   não são criptografados em repouso — migre para um plano pago e criptografe-os
+   se isso importar.
 2. **CSP com `'unsafe-inline'` para estilos**: o CSS está inline no HTML.
    Migrar para arquivo externo permitiria remover essa exceção.
 3. **Refresh token na sessão**: os tokens vivem apenas na sessão (expiram em
