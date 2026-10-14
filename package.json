@@ -1,6 +1,6 @@
 {
   "name": "gmail-cleaner-buddy",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Gmail Cleaner Buddy com OAuth2 e Gmail API",
   "main": "dist/server.js",
   "scripts": {
